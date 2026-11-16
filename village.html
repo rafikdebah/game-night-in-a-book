@@ -206,7 +206,7 @@ function startTurn(){
   $('#turn-title').textContent='Turn '+S.turn+' of '+TURNS;
   $('#turn-sub').textContent=destroyedCount()+' of '+LOSE_AT+' places lost';
   drawDice();drawCrises();drawMini('#mini-turn');
-  show('v-turn');startTimer();
+  show('v-turn');GN.roll($('#dice'));startTimer();
 }
 function drawDice(){
   $('#dice-title').textContent=S.dice.length<4?'Your dice (only '+S.dice.length+', the storm took one)':'Your dice';
@@ -220,9 +220,10 @@ function drawDice(){
 $('#btn-reroll').addEventListener('click',function(){if(S.lookout<=0)return;S.rerollMode=!S.rerollMode;GN.beep('tap');drawDice()});
 $('#dice').addEventListener('click',function(e){
   var d=e.target.closest('[data-i]');if(!d)return;var i=+d.dataset.i;
-  if(S.rerollMode){S.dice[i]=GN.d6();S.dim[i]=false;S.lookout--;S.rerollMode=false}
+  if(S.rerollMode){S.dice[i]=GN.d6();S.dim[i]=false;S.lookout--;S.rerollMode=false;S.justRolled=i}
   else{S.dim[i]=!S.dim[i]}
   GN.beep('tap');drawDice();
+  if(S.justRolled!=null){GN.roll($('#dice'),S.justRolled);S.justRolled=null}
 });
 function drawCrises(){
   $('#crises').innerHTML=S.crises.map(function(c,i){

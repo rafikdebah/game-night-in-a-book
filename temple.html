@@ -103,7 +103,7 @@ function nextTurn(){
   if(S.turn===9){news.push('<b>Two turns left.</b> Anyone still inside after turn 10 keeps only their coins.')}
   if(S.turn<10){var free=[];for(var x=0;x<8;x++)for(var y=0;y<10;y++){var k=key(x,y);if(k!==DOOR&&!S.blocked[k]&&!S.players.some(function(p){return p.pos===k&&!p.out}))free.push(k)}
     S.crack=GN.pick(free);news.push('<b>'+S.crack+' is cracking.</b> It will collapse next turn. You may walk across it, but you cannot stop there.')}
-  S.roll=[GN.d6(),GN.d6()];S.dice=S.roll.slice();S.nudged=false;S.cur=-1;S.news=news;S.players.forEach(function(p){p.done=false});
+  S.roll=[GN.d6(),GN.d6()];S.dice=S.roll.slice();S.fresh=true;S.nudged=false;S.cur=-1;S.news=news;S.players.forEach(function(p){p.done=false});
   advance()}
 function minDist(k){var d=99;active().forEach(function(p){d=Math.min(d,dist(k,p.pos))});return d}
 function advance(){
@@ -130,6 +130,7 @@ function draw(){
   $('#news').innerHTML=(S.news||[]).map(function(t){return '<p>'+t+'</p>'}).join('')||'<p class="muted">All quiet. For now.</p>';
   $('#who').textContent=(S.players.length>1?p.name+', your move':'Your move');
   $('#dice').innerHTML=S.dice.map(function(v,i){return GN.dieHTML(v,'button',S.moveDie===i?'pick':'','data-d="'+i+'"')}).join('');
+  if(S.fresh){S.fresh=false;GN.roll($('#dice'))}
   var dbl=S.roll[0]===S.roll[1]&&!S.nudged;
   $('#nudge').hidden=!dbl;
   $('#nudge').innerHTML=dbl?'<button class="ghost small" data-n="1">Doubles! Add 1 to one die</button><button class="ghost small" data-n="-1">Doubles! Take 1 off one die</button>':'';

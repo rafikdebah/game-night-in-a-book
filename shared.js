@@ -15,6 +15,16 @@ GN.dieHTML=function(v,tag,cls,attrs){tag=tag||'div';var h='';var f=Math.max(1,Ma
   return '<'+tag+' class="die pop '+(cls||'')+'" '+(attrs||'')+' aria-label="Die showing '+v+'">'+h+'</'+tag+'>'};
 /* sounds: 'tap','good','bad','rumble','alarm'. Muted with GN.muted=true. */
 GN.muted=false;var actx=null;
+/* GN.roll(container [, index]) : makes the dice tumble for a moment, then land on their real face */
+GN.roll=function(box,only){if(!box)return;var dice=[].slice.call(box.querySelectorAll('.die'));
+  if(only!==undefined)dice=dice[only]?[dice[only]]:[];if(!dice.length)return;
+  var still=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  dice.forEach(function(d,n){var real=[].map.call(d.children,function(i){return i.className});
+    d.classList.add('rolling');d.style.animationDelay=(n*60)+'ms';if(still)return setTimeout(function(){d.classList.remove('rolling')},200);
+    var t=setInterval(function(){var f=PIPS[1+Math.floor(Math.random()*6)];[].forEach.call(d.children,function(i,k){i.className=f.indexOf(k)>=0?'p':''})},70);
+    setTimeout(function(){clearInterval(t);[].forEach.call(d.children,function(i,k){i.className=real[k]});d.classList.remove('rolling');d.classList.add('landed');
+      setTimeout(function(){d.classList.remove('landed');d.style.animationDelay=''},260)},650+n*90)});
+  if(!GN.muted&&!still)try{[0,90,180,270,380].forEach(function(ms){setTimeout(function(){GN.beep('tap')},ms)})}catch(e){}};
 GN.beep=function(kind){if(GN.muted)return;try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();
   var P={tap:[[520,.06]],good:[[523,.1],[784,.16]],bad:[[220,.14],[165,.22]],rumble:[[70,.5],[55,.6]],alarm:[[880,.12],[660,.12],[880,.12]]}[kind]||[[440,.08]];
   var t=actx.currentTime;P.forEach(function(n){var o=actx.createOscillator(),g=actx.createGain();o.type=kind==='rumble'?'sawtooth':'triangle';o.frequency.value=n[0];
