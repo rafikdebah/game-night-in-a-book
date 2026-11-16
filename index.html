@@ -4,22 +4,189 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Game Night in a Book</title>
-<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="shared.css">
+<meta name="description" content="The phone side of Game Night in a Book: three family games played with a pencil and a phone.">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,500;0,700;0,800;1,700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
 <style>
-.game{display:flex;flex-direction:column;gap:4px;background:var(--card);border:1px solid var(--line);border-left:8px solid var(--accent);border-radius:14px;padding:14px 16px;color:var(--ink);text-decoration:none}
-.game b{font-family:var(--display);font-size:22px}
+/* Layout: one night-sky world taken from the book cover. Hero with the book, then three game doors, then how it works. */
+:root{
+  --night:#1b1f4b; --night-2:#252a63; --ink:#ffffff; --soft:#c9cdf0;
+  --sun:#ffd23f; --coral:#ff5a4e; --line:#3a4083;
+  --display:"Poppins","Trebuchet MS",sans-serif; --body:"Atkinson Hyperlegible","Verdana",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--night);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5;overflow-x:hidden}
+a{color:inherit}
+.sky{position:fixed;inset:0;pointer-events:none;z-index:0}
+.wrap{position:relative;z-index:1;max-width:1040px;margin:0 auto;padding:0 20px 56px}
+header.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 0}
+.brand{font-family:var(--display);font-weight:800;letter-spacing:.02em;font-size:15px;text-transform:uppercase;color:var(--sun);text-decoration:none}
+.bar .tag{font-size:14px;color:var(--soft)}
+.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:36px;align-items:center;padding:20px 0 44px}
+.kicker{display:inline-block;background:var(--coral);font-family:var(--display);font-weight:800;font-size:14px;letter-spacing:.04em;text-transform:uppercase;padding:6px 14px;border-radius:6px;transform:rotate(-1.5deg)}
+h1{font-family:var(--display);font-weight:800;line-height:.95;margin:16px 0 0;text-wrap:balance;font-size:clamp(46px,9vw,92px);color:var(--sun);letter-spacing:-.01em}
+h1 em{display:block;font-style:italic;font-weight:700;color:var(--ink);font-size:.5em;margin-top:.12em;letter-spacing:0}
+.lede{font-size:19px;color:var(--soft);max-width:34em;margin:18px 0 0}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
+.btn{font-family:var(--display);font-weight:800;font-size:18px;text-decoration:none;border-radius:14px;padding:15px 24px;display:inline-block;border:3px solid var(--sun);background:var(--sun);color:var(--night);min-height:54px}
+.btn.ghost{background:transparent;color:var(--sun)}
+.btn:focus-visible,.door:focus-visible{outline:4px solid var(--coral);outline-offset:3px}
+.bookstage{display:grid;place-items:center;perspective:1400px;padding:10px 0}
+.book{position:relative;width:min(78%,330px);transform:rotateY(-22deg) rotateX(4deg) rotateZ(2deg);transform-style:preserve-3d;filter:drop-shadow(26px 30px 30px rgba(0,0,0,.45))}
+.book img{display:block;width:100%;height:auto;border-radius:3px 8px 8px 3px}
+.book::before{content:"";position:absolute;top:1.2%;bottom:1.2%;right:-14px;width:14px;background:repeating-linear-gradient(90deg,#f4f1e6 0 2px,#d9d4c2 2px 3px);transform:rotateY(62deg);transform-origin:left;border-radius:0 3px 3px 0}
+.book::after{content:"";position:absolute;inset:0;border-radius:3px 8px 8px 3px;background:linear-gradient(90deg,rgba(0,0,0,.28),rgba(255,255,255,.10) 5%,rgba(0,0,0,0) 12%)}
+.pencil{position:absolute;right:-34px;bottom:-18px;width:150px;transform:rotate(-28deg)}
+h2{font-family:var(--display);font-weight:800;font-size:clamp(26px,4.4vw,38px);margin:0 0 6px;text-wrap:balance}
+.sub{color:var(--soft);margin:0 0 22px}
+.doors{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.door{display:flex;flex-direction:column;gap:10px;background:var(--night-2);border:2px solid var(--line);border-radius:20px;padding:20px;text-decoration:none;transition:transform .15s ease,border-color .15s ease}
+.door:hover{transform:translateY(-4px);border-color:var(--sun)}
+.door svg{width:100%;height:auto;border-radius:12px;background:#f6f8f4}
+.door .who{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--sun)}
+.door b{font-family:var(--display);font-weight:800;font-size:24px;line-height:1.1}
+.door p{margin:0;color:var(--soft);font-size:16px}
+.door .go{margin-top:auto;font-family:var(--display);font-weight:800;background:var(--coral);color:#fff;border-radius:12px;padding:12px 16px;text-align:center}
+section{padding:26px 0}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;counter-reset:s}
+.step{border-top:3px solid var(--sun);padding-top:14px}
+.step::before{counter-increment:s;content:counter(s);font-family:var(--display);font-weight:800;font-size:40px;line-height:1;color:var(--sun);display:block;margin-bottom:6px}
+.step b{font-family:var(--display);font-size:19px;display:block}
+.step p{margin:4px 0 0;color:var(--soft);font-size:16px}
+.promise{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.chip{border:2px solid var(--line);border-radius:999px;padding:7px 14px;font-size:15px;font-weight:700}
+footer{border-top:1px solid var(--line);margin-top:24px;padding-top:18px;color:var(--soft);font-size:15px}
+@media (max-width:760px){
+  .hero{grid-template-columns:1fr;gap:10px;padding-top:6px}
+  .bookstage{order:-1}
+  .book{width:min(62%,250px)}
+  .pencil{width:110px;right:-22px}
+  .doors,.steps{grid-template-columns:1fr}
+  .bar .tag{display:none}
+}
+@media (prefers-reduced-motion:no-preference){
+  .book{animation:float 6s ease-in-out infinite}
+  @keyframes float{0%,100%{translate:0 0}50%{translate:0 -10px}}
+}
 </style>
 </head>
 <body>
-<main class="wrap">
-  <p class="eyebrow">The phone side of your book</p>
-  <h1>Game Night in a Book</h1>
-  <p>Open the book to a blank game page, grab a pencil, then pick the game.</p>
-  <a class="game" href="temple.html"><span class="eyebrow">Adventure · 1 or 2 players</span><b>The Lost Temple</b><span class="muted">Hidden rooms, a Shadow on your heels, and a temple that is falling apart.</span></a>
-  <a class="game" href="village.html"><span class="eyebrow">Teamwork · 1 to 4 players</span><b>Save the Village</b><span class="muted">Fires spread, floods wash the barn away, and the clock is ticking.</span></a>
-  <a class="game" href="market.html"><span class="eyebrow">Trading · 2 to 4 players</span><b>The Grand Market</b><span class="muted">Secret orders, private rumors and a hidden contract for everyone.</span></a>
-  <p class="muted small">Nothing to install and no account. This page keeps nothing: when you close it, the game is gone.</p>
-</main>
+<canvas class="sky" id="sky" aria-hidden="true"></canvas>
+<div class="wrap">
+  <header class="bar">
+    <a class="brand" href="index.html">Game Night in a Book</a>
+    <span class="tag">The phone side of your book</span>
+  </header>
+
+  <div class="hero">
+    <div>
+      <span class="kicker">3 family games</span>
+      <h1>Game Night <em>in a Book</em></h1>
+      <p class="lede">Open the book, grab a pencil, and let your phone run the surprises: hidden rooms, spreading fires, secret deals. Nothing to install.</p>
+      <div class="cta">
+        <a class="btn" href="#games">Start a new game</a>
+        <a class="btn ghost" href="#how">How it works</a>
+      </div>
+    </div>
+    <div class="bookstage">
+      <div class="book">
+        <img src="book-cover.jpg" alt="Cover of the book Game Night in a Book, by Milo Verne" width="560" height="724">
+        <svg class="pencil" viewBox="0 0 150 30" aria-hidden="true">
+          <rect x="22" y="6" width="104" height="18" fill="#ffd23f"/><rect x="22" y="6" width="104" height="6" fill="#ffe27a"/>
+          <polygon points="22,6 0,15 22,24" fill="#f1d9b0"/><polygon points="7,12 0,15 7,18" fill="#1b1f4b"/>
+          <rect x="126" y="6" width="8" height="18" fill="#b9bdd6"/><rect x="134" y="6" width="16" height="18" rx="5" fill="#ff5a4e"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <section id="games">
+    <h2>Pick your game</h2>
+    <p class="sub">Open the book to a blank page of that game first. One game uses one page.</p>
+    <div class="doors">
+      <a class="door" href="temple.html">
+        <svg viewBox="0 0 240 140" role="img" aria-label="A temple map with a pencil path">
+          <g stroke="#c9ced0" stroke-width="1"><path d="M30 20H210M30 45H210M30 70H210M30 95H210M30 120H210M30 20V120M60 20V120M90 20V120M120 20V120M150 20V120M180 20V120M210 20V120"/></g>
+          <rect x="30" y="20" width="180" height="100" fill="none" stroke="#13211d" stroke-width="3"/>
+          <rect x="150" y="45" width="30" height="25" fill="#13211d"/><rect x="60" y="95" width="30" height="25" fill="#13211d"/>
+          <path d="M105 120V83H75V58H135V33H195" fill="none" stroke="#ff5a4e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="45" cy="33" r="7" fill="#ffd23f" stroke="#13211d" stroke-width="2"/><circle cx="165" cy="108" r="7" fill="#ffd23f" stroke="#13211d" stroke-width="2"/>
+          <text x="135" y="113" font-family="Verdana" font-weight="700" font-size="18" text-anchor="middle" fill="#13211d">?</text>
+          <polygon points="195,22 198,30 207,30 200,35 203,44 195,39 187,44 190,35 183,30 192,30" fill="#ffd23f" stroke="#13211d" stroke-width="2"/>
+        </svg>
+        <span class="who">Adventure · 1 or 2 players · 15 min</span>
+        <b>The Lost Temple</b>
+        <p>Hidden rooms, a Shadow on your heels, and a temple that is falling apart.</p>
+        <span class="go">Play The Lost Temple</span>
+      </a>
+      <a class="door" href="village.html">
+        <svg viewBox="0 0 240 140" role="img" aria-label="Village houses, one of them on fire">
+          <rect x="0" y="108" width="240" height="32" fill="#dfe6df"/>
+          <g stroke="#13211d" stroke-width="3" stroke-linejoin="round">
+            <rect x="24" y="70" width="46" height="40" fill="#fff"/><polygon points="18,70 47,44 76,70" fill="#ffd23f"/>
+            <rect x="96" y="60" width="52" height="50" fill="#fff"/><polygon points="90,60 122,30 154,60" fill="#ff5a4e"/>
+            <rect x="174" y="74" width="44" height="36" fill="#fff"/><polygon points="168,74 196,50 224,74" fill="#ffd23f"/>
+          </g>
+          <rect x="40" y="88" width="12" height="22" fill="#13211d"/><rect x="116" y="84" width="14" height="26" fill="#13211d"/><rect x="190" y="90" width="12" height="20" fill="#13211d"/>
+          <path d="M122 26c-10-12 4-16 0-26 12 8 16 18 8 28z" fill="#ff5a4e" stroke="#13211d" stroke-width="2"/>
+          <g fill="#fff" stroke="#13211d" stroke-width="2"><rect x="18" y="12" width="26" height="26" rx="5"/><rect x="196" y="10" width="26" height="26" rx="5"/></g>
+          <g fill="#13211d"><circle cx="25" cy="19" r="2.6"/><circle cx="37" cy="31" r="2.6"/><circle cx="31" cy="25" r="2.6"/><circle cx="203" cy="17" r="2.6"/><circle cx="215" cy="29" r="2.6"/><circle cx="215" cy="17" r="2.6"/><circle cx="203" cy="29" r="2.6"/></g>
+        </svg>
+        <span class="who">Teamwork · 1 to 4 players · 20 min</span>
+        <b>Save the Village</b>
+        <p>Fires spread, floods wash the barn away, and the clock is ticking. Win or lose together.</p>
+        <span class="go">Play Save the Village</span>
+      </a>
+      <a class="door" href="market.html">
+        <svg viewBox="0 0 240 140" role="img" aria-label="A market stall with a price chart">
+          <rect x="0" y="112" width="240" height="28" fill="#dfe6df"/>
+          <g stroke="#13211d" stroke-width="3" stroke-linejoin="round">
+            <rect x="26" y="66" width="96" height="46" fill="#fff"/>
+            <path d="M18 66h112l-10-28H28z" fill="#ff5a4e"/><path d="M46 38l-6 28M74 38v28M102 38l6 28" fill="none"/>
+            <circle cx="52" cy="92" r="11" fill="#ffd23f"/><circle cx="78" cy="94" r="9" fill="#ffd23f"/><circle cx="100" cy="92" r="11" fill="#ffd23f"/>
+          </g>
+          <rect x="146" y="26" width="76" height="86" rx="8" fill="#fff" stroke="#13211d" stroke-width="3"/>
+          <path d="M156 92l14-20 12 10 16-30 14 12" fill="none" stroke="#0c6a5b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="198" cy="52" r="5" fill="#ff5a4e"/>
+        </svg>
+        <span class="who">Trading · 2 to 4 players · 20 min</span>
+        <b>The Grand Market</b>
+        <p>Secret orders, private rumors and a hidden contract for every merchant.</p>
+        <span class="go">Play The Grand Market</span>
+      </a>
+    </div>
+  </section>
+
+  <section id="how">
+    <h2>How it works</h2>
+    <p class="sub">The book is the board. The phone is everything that hides, moves or keeps a secret.</p>
+    <div class="steps">
+      <div class="step"><b>Open the book</b><p>Turn to a blank game page and give everyone a pencil. You draw and write right on the page.</p></div>
+      <div class="step"><b>Scan the code</b><p>Each game page has a code. Your phone opens the right game, and walks you through your first turns.</p></div>
+      <div class="step"><b>Play, then show off</b><p>At the end, make a winner's card with the date, the scores and a photo if you like.</p></div>
+    </div>
+    <div class="promise" style="margin-top:22px">
+      <span class="chip">Ages 8 and up</span><span class="chip">1 to 4 players</span><span class="chip">No app to install</span><span class="chip">No account</span><span class="chip">Nothing is stored</span>
+    </div>
+  </section>
+
+  <footer>
+    <p>This site keeps nothing and sends nothing. When you close the page, the game is gone. Photos for the winner's card stay on your phone.</p>
+    <p>Game Night in a Book, by Milo Verne.</p>
+  </footer>
+</div>
+<script>
+/* night sky: a few stars and plus signs, drawn once (and again on resize) */
+(function(){var c=document.getElementById('sky'),x=c.getContext('2d');
+function draw(){var w=c.width=innerWidth,h=c.height=innerHeight,s=1;function r(){s=(s*16807)%2147483647;return s/2147483647}
+  var cols=['#ffd23f','#ff5a4e','#ffffff','#3a4083'];
+  for(var i=0;i<70;i++){var px=r()*w,py=r()*h,k=r(),col=cols[Math.floor(r()*4)];x.fillStyle=x.strokeStyle=col;x.globalAlpha=.25+r()*.6;
+    if(k<.6){x.beginPath();x.arc(px,py,1+r()*2.5,0,7);x.fill()}
+    else if(k<.85){var a=4+r()*5;x.lineWidth=2;x.beginPath();x.moveTo(px-a,py);x.lineTo(px+a,py);x.moveTo(px,py-a);x.lineTo(px,py+a);x.stroke()}
+    else{var b=5+r()*6;x.beginPath();x.moveTo(px,py-b);x.quadraticCurveTo(px,py,px+b,py);x.quadraticCurveTo(px,py,px,py+b);x.quadraticCurveTo(px,py,px-b,py);x.quadraticCurveTo(px,py,px,py-b);x.fill()}}
+  x.globalAlpha=1}
+draw();addEventListener('resize',draw)})();
+</script>
 </body>
 </html>
