@@ -46,18 +46,18 @@ GN.card=function(opt){var o=overlay('gn-card'),photo=null;
    '<p class="muted small">The card and the photo are made on this phone. Nothing is uploaded or kept after you close this page. If Save does nothing, press and hold the picture.</p>'+
    '<button class="ghost small" id="gn-card-close">Close</button></div>';
   var cv=GN.$('#gn-cv'),c=cv.getContext('2d');
-  function draw(){var W=1080,H=1350;c.fillStyle='#0c6a5b';c.fillRect(0,0,W,H);c.fillStyle='#f6f8f4';c.fillRect(36,36,W-72,H-72);
-    var y=130;c.textAlign='center';c.fillStyle='#5a6a64';c.font='700 34px Verdana,sans-serif';c.fillText((opt.game||'').toUpperCase(),W/2,y);
-    y+=90;c.fillStyle='#13211d';c.font='800 78px "Trebuchet MS",sans-serif';wrap(opt.headline||'We played!',W/2,y,W-160,84);y=lastY+130;
+  function draw(){var W=1080,H=1350;var st=getComputedStyle(document.body),BG=(st.getPropertyValue('--paper')||'#1b1f4b').trim(),AC=(st.getPropertyValue('--accent')||'#ffd23f').trim();c.fillStyle=AC;c.fillRect(0,0,W,H);c.fillStyle=BG;c.fillRect(30,30,W-60,H-60);
+    var y=130;c.textAlign='center';c.fillStyle='#c9cdf0';c.font='700 34px Verdana,sans-serif';c.fillText((opt.game||'').toUpperCase(),W/2,y);
+    y+=90;c.fillStyle=AC;c.font='800 78px Poppins,"Trebuchet MS",sans-serif';wrap(opt.headline||'We played!',W/2,y,W-160,84);y=lastY+130;
     if(photo){var ph=430,pw=W-200,r=Math.max(pw/photo.width,ph/photo.height),sw=pw/r,sh=ph/r;
-      c.drawImage(photo,(photo.width-sw)/2,(photo.height-sh)/2,sw,sh,100,y,pw,ph);c.strokeStyle='#13211d';c.lineWidth=6;c.strokeRect(100,y,pw,ph);y+=ph+90}else{y+=110}
-    rows.slice(0,5).forEach(function(r,i){c.textAlign='left';c.fillStyle=i===0?'#b97c00':'#13211d';c.font=(i===0?'800 60px':'700 48px')+' "Trebuchet MS",sans-serif';
+      c.drawImage(photo,(photo.width-sw)/2,(photo.height-sh)/2,sw,sh,100,y,pw,ph);c.strokeStyle='#ffffff';c.lineWidth=6;c.strokeRect(100,y,pw,ph);y+=ph+90}else{y+=110}
+    rows.slice(0,5).forEach(function(r,i){c.textAlign='left';c.fillStyle=i===0?AC:'#ffffff';c.font=(i===0?'800 60px':'700 48px')+' Poppins,"Trebuchet MS",sans-serif';
       c.fillText((i+1)+'. '+String(r.name).slice(0,16),130,y);c.textAlign='right';c.fillText(String(r.score),W-130,y);y+=i===0?92:76});
-    if(opt.unit){c.textAlign='right';c.fillStyle='#5a6a64';c.font='400 30px Verdana,sans-serif';c.fillText(opt.unit,W-130,y-20);y+=20}
-    if(opt.note){c.textAlign='center';c.fillStyle='#13211d';c.font='400 36px Verdana,sans-serif';wrap(opt.note,W/2,y+30,W-200,46)}
-    c.textAlign='center';c.fillStyle='#5a6a64';c.font='400 32px Verdana,sans-serif';
+    if(opt.unit){c.textAlign='right';c.fillStyle='#c9cdf0';c.font='400 30px Verdana,sans-serif';c.fillText(opt.unit,W-130,y-20);y+=20}
+    if(opt.note){c.textAlign='center';c.fillStyle='#ffffff';c.font='400 36px Verdana,sans-serif';wrap(opt.note,W/2,y+30,W-200,46)}
+    c.textAlign='center';c.fillStyle='#c9cdf0';c.font='400 32px Verdana,sans-serif';
     c.fillText(new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}),W/2,H-150);
-    c.fillStyle='#0c6a5b';c.font='800 40px "Trebuchet MS",sans-serif';c.fillText('Game Night in a Book',W/2,H-90);
+    c.fillStyle=AC;c.font='800 40px Poppins,"Trebuchet MS",sans-serif';c.fillText('Game Night in a Book',W/2,H-90);
     try{GN.$('#gn-save').href=cv.toDataURL('image/png')}catch(e){}}
   var lastY=0;function wrap(t,x,y,maxw,lh){var words=String(t).split(' '),line='';words.forEach(function(w){var test=line?line+' '+w:w;if(c.measureText(test).width>maxw&&line){c.fillText(line,x,y);y+=lh;line=w}else line=test});c.fillText(line,x,y);lastY=y}
   GN.$('#gn-photo').addEventListener('change',function(e){var f=e.target.files&&e.target.files[0];if(!f)return;var im=new Image();im.onload=function(){photo=im;draw()};im.src=URL.createObjectURL(f)});

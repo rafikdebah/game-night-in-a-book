@@ -1,34 +1,39 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,500;0,700;0,800;1,700&family=Atkinson+Hyperlegible:wght@400;700&display=swap");
 /* Game Night in a Book - companion. One phone column, one main action per screen, big numbers readable at arm's length. */
 :root{
-  --paper:#eef2ee; --card:#ffffff; --ink:#13211d; --muted:#5a6a64; --line:#cdd6d0;
-  --accent:#0c6a5b; --accent-ink:#ffffff; --alert:#b3261e; --gold:#b97c00;
-  --display:"Bricolage Grotesque","Trebuchet MS",sans-serif;
+  /* Charte du livre : nuit, soleil, corail. Chaque jeu garde la charte et change de teinte et d'accent. */
+  --paper:#1b1f4b; --card:#262b66; --ink:#ffffff; --muted:#c9cdf0; --line:#3a4083;
+  --accent:#ffd23f; --accent-ink:#1b1f4b; --alert:#ff7a70; --gold:#ff5a4e;
+  --die-bg:#ffffff; --die-ink:#1b1f4b;
+  --display:"Poppins","Trebuchet MS",sans-serif;
   --body:"Atkinson Hyperlegible","Verdana",sans-serif;
-  color-scheme:light;
+  color-scheme:dark;
 }
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){--paper:#0f1916;--card:#182521;--ink:#e9f0ec;--muted:#9fb0a9;--line:#2d3f39;--accent:#3fc2a9;--accent-ink:#06211b;--alert:#ff8a80;--gold:#f0b83c;color-scheme:dark}
-}
-:root[data-theme="dark"]{--paper:#0f1916;--card:#182521;--ink:#e9f0ec;--muted:#9fb0a9;--line:#2d3f39;--accent:#3fc2a9;--accent-ink:#06211b;--alert:#ff8a80;--gold:#f0b83c;color-scheme:dark}
+/* The Lost Temple : nuit indigo, lumière de torche */
+body.g-temple{--paper:#1b1f4b;--card:#262b66;--line:#3a4083;--muted:#c9cdf0;--accent:#ffd23f;--accent-ink:#1b1f4b;--alert:#ff7a70;--gold:#ff5a4e}
+/* Save the Village : nuit verte de campagne, feu corail */
+body.g-village{--paper:#14313a;--card:#1d4450;--line:#2f6170;--muted:#c3e0e3;--accent:#ff5a4e;--accent-ink:#ffffff;--alert:#ffb347;--gold:#ffd23f}
+/* The Grand Market : nuit pourpre de port, menthe des épices */
+body.g-market{--paper:#2a1d52;--card:#38296c;--line:#51408f;--muted:#d6ccf2;--accent:#5fe3c0;--accent-ink:#12261f;--alert:#ff7a70;--gold:#ffd23f}
 *{box-sizing:border-box}
 html,body{margin:0}
-body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.45}
+body{background-color:var(--paper);background-image:radial-gradient(circle at 12% 8%,color-mix(in srgb,var(--accent) 55%,transparent) 0 1.5px,transparent 2px),radial-gradient(circle at 82% 16%,#fff 0 1.2px,transparent 1.8px),radial-gradient(circle at 64% 44%,color-mix(in srgb,var(--gold) 60%,transparent) 0 1.4px,transparent 2px),radial-gradient(circle at 28% 72%,#fff 0 1px,transparent 1.6px),radial-gradient(circle at 90% 84%,color-mix(in srgb,var(--accent) 55%,transparent) 0 1.4px,transparent 2px);background-size:340px 420px;color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.45;min-height:100vh}
 main.wrap{max-width:460px;margin:0 auto;padding:16px 16px 48px;display:flex;flex-direction:column;gap:16px}
 h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;line-height:1.1}
-h1{font-size:30px;font-weight:800} h2{font-size:21px;font-weight:700} h3{font-size:17px;font-weight:700}
+h1{font-size:34px;font-weight:800;color:var(--accent);letter-spacing:-.01em} h2{font-size:21px;font-weight:700} h3{font-size:17px;font-weight:700}
 p{margin:0}
 .muted{color:var(--muted)} .small{font-size:15px}
 .view{display:none;flex-direction:column;gap:16px} .view.on{display:flex}
 .top{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.top a{color:var(--accent);font-weight:700;text-decoration:none;padding:8px 0}
+.top a{color:var(--accent);font-family:var(--display);font-weight:800;text-decoration:none;padding:8px 0}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
 .card.alertbox{border-color:var(--alert)} .card.alertbox .eyebrow{color:var(--alert)}
 .card.goldbox{border-color:var(--gold)} .card.goldbox .eyebrow{color:var(--gold)}
 .eyebrow{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
-button,.btn{font:inherit;font-weight:700;border-radius:12px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);padding:14px 16px;min-height:52px;cursor:pointer;text-align:center;text-decoration:none;display:block;width:100%}
+button,.btn{font:inherit;font-family:var(--display);font-weight:800;border-radius:14px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);padding:14px 16px;min-height:52px;cursor:pointer;text-align:center;text-decoration:none;display:block;width:100%}
 button.ghost,.btn.ghost{background:transparent;color:var(--accent)}
 button.small{min-height:44px;padding:8px 12px;font-size:15px}
-button.on{background:var(--gold);border-color:var(--gold);color:#1b1300}
+button.on{background:var(--gold);border-color:var(--gold);color:#1b1f4b}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 button[disabled]{opacity:.4;cursor:default}
 input[type=text],input[type=number],select{font:inherit;width:100%;padding:12px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink)}
@@ -41,9 +46,9 @@ label{font-weight:700;font-size:15px}
 .pill{display:inline-block;border:1.5px solid var(--line);border-radius:999px;padding:2px 10px;font-size:14px;font-weight:700}
 .pill.bad{border-color:var(--alert);color:var(--alert)} .pill.good{border-color:var(--accent);color:var(--accent)}
 .dice{display:flex;gap:12px;flex-wrap:wrap}
-.die{width:64px;height:64px;min-height:0;border-radius:14px;border:2px solid var(--ink);background:var(--card);padding:9px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:2px}
-.die i{border-radius:50%} .die i.p{background:var(--ink)}
-.die.used{opacity:.3} .die.pick{border-color:var(--gold);border-width:4px;padding:7px}
+.die{width:64px;height:64px;min-height:0;border-radius:14px;border:2px solid var(--die-bg);background:var(--die-bg);padding:9px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:2px}
+.die i{border-radius:50%} .die i.p{background:var(--die-ink)}
+.die.used{opacity:.28} .die.pick{border-color:var(--gold);border-width:4px;padding:7px}
 .list{display:flex;flex-direction:column}
 .list>*{padding:10px 0;border-top:1px solid var(--line)} .list>*:first-child{border-top:0}
 .overlay{position:fixed;inset:0;background:color-mix(in srgb,var(--paper) 92%,transparent);display:none;z-index:20;overflow:auto;padding:16px}
