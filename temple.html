@@ -19,6 +19,19 @@
 .mini button.shd{background:var(--alert);color:#fff;border-color:var(--alert)}
 .hearts{font-size:22px;letter-spacing:3px}
 .legend{display:flex;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.now{position:sticky;top:0;z-index:5;border-radius:16px;padding:12px 14px;background:var(--pc);color:var(--pi);display:flex;align-items:center;gap:12px;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.now .av{flex:none;width:48px;height:48px;border-radius:50%;background:var(--pi);color:var(--pc);display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:24px}
+.now .nm{font-family:var(--display);font-weight:800;font-size:26px;line-height:1.05;overflow-wrap:anywhere}
+.now .sub{font-size:14px;font-weight:700;opacity:.85}
+.steps{display:flex;gap:6px;margin:2px 0 4px}
+.steps span{flex:1;text-align:center;font-size:12.5px;font-weight:700;padding:7px 4px;border-radius:9px;border:1.5px solid var(--line);color:var(--muted)}
+.steps span.cur{background:var(--pc);color:var(--pi);border-color:var(--pc)}
+.steps span.done{opacity:.55;text-decoration:line-through}
+.warn{color:var(--alert);font-weight:700}
+.p0{--pc:#ffd23f;--pi:#1b1f4b} .p1{--pc:#ff5a4e;--pi:#fff}
+.mini button.me{background:var(--pc);color:var(--pi);border-color:var(--pc)}
+#res .card{border-top:8px solid var(--pc)}
+#res .nextname{font-family:var(--display);font-weight:800;font-size:34px;margin:0;color:var(--pc)}
 </style>
 </head>
 <body class="g-temple">
@@ -33,8 +46,7 @@
       <p class="muted small">The map number is printed at the top of the page in your book.</p>
       <label for="n1">Explorer 1</label><input type="text" id="n1" maxlength="14" placeholder="First name">
       <label for="n2">Explorer 2 (leave empty to play alone)</label><input type="text" id="n2" maxlength="14" placeholder="First name"><p class="muted small">Two explorers? Each one draws on their own copy of the same map number.</p>
-      <p class="muted small">In a duel, each explorer draws on their own copy of the same map.</p>
-    </div>
+          </div>
     <button id="start">Enter the temple</button>
     <button class="ghost small" id="how">How to play</button>
   </section>
@@ -42,10 +54,12 @@
   <section class="view" id="v-play">
     <p class="turn" id="turn"></p>
     <div class="card alertbox" id="newsbox"><p class="eyebrow">In the temple</p><div id="news" class="list"></div></div>
-    <div class="card">
-      <p class="eyebrow" id="who"></p>
+    <div class="now" id="now"><div class="av" id="now-av"></div><div><div class="nm" id="who"></div><div class="sub" id="now-sub"></div></div></div>
+    <div class="card" id="playcard">
+      <div class="steps" id="steps"></div>
       <div class="dice" id="dice"></div>
       <p id="hint"></p>
+      <p class="warn" id="warn" hidden></p>
       <div class="row" id="nudge" hidden></div>
       <div class="mini" id="mini"></div>
       <div class="legend"><span>■ collapsed</span><span>▢ dashed: cracking</span><span>S: the Shadow</span></div>
@@ -54,6 +68,11 @@
     <div class="card" id="statbox"></div>
     <button class="ghost small" id="new">New game</button>
   </section>
+
+  <div class="overlay" id="res"><div class="card">
+    <p class="eyebrow" id="res-eye"></p><h2 id="res-title"></h2><div id="res-body" class="list"></div>
+    <p class="muted small" id="res-lead"></p><p class="nextname" id="res-next"></p>
+    <button id="res-btn"></button></div></div>
 
   <section class="view" id="v-end">
     <p class="turn">The adventure is over.</p>
@@ -128,14 +147,19 @@ function draw(){
   var p=S.players[S.cur];
   $('#turn').textContent='Turn '+S.turn+' of 10';
   $('#news').innerHTML=(S.news||[]).map(function(t){return '<p>'+t+'</p>'}).join('')||'<p class="muted">All quiet. For now.</p>';
-  $('#who').textContent=(S.players.length>1?p.name+', your move':'Your move');
+  var pi=S.cur,duel=S.players.length>1;$('#v-play').className='view on p'+pi;
+  $('#who').textContent=p.name;$('#now-av').textContent=p.name[0].toUpperCase();
+  $('#now-sub').textContent=(duel?'Your move. Only '+p.name+' taps now.':'Your move.')+' '+'\u2665'.repeat(p.hearts);
+  var st=S.moveDie===null?0:1;
+  $('#steps').innerHTML=['1 · Tap a die','2 · Draw your path','3 · Tap your square'].map(function(x,i){return '<span class="'+(i<st?'done':(i===st||(st===1&&i===2))?'cur':'')+'">'+x+'</span>'}).join('');
+  $('#warn').hidden=!S.warn;$('#warn').textContent=S.warn||'';S.warn=null;
   $('#dice').innerHTML=S.dice.map(function(v,i){return GN.dieHTML(v,'button',S.moveDie===i?'pick':'','data-d="'+i+'"')}).join('');
   if(S.fresh){S.fresh=false;GN.roll($('#dice'))}
   var dbl=S.roll[0]===S.roll[1]&&!S.nudged;
   $('#nudge').hidden=!dbl;
   $('#nudge').innerHTML=dbl?'<button class="ghost small" data-n="1">Doubles! Add 1 to one die</button><button class="ghost small" data-n="-1">Doubles! Take 1 off one die</button>':'';
   var E=S.moveDie===null?{}:ends(p,S.dice[S.moveDie]);
-  $('#hint').innerHTML=S.moveDie===null?'Tap the die you move with. The other one is your Strength.':
+  $('#hint').innerHTML=S.moveDie===null?'<b>'+GN.esc(p.name)+'</b>, tap the die you move with. The other one is your Strength.':
     (Object.keys(E).length?'Draw your path of <b>'+S.dice[S.moveDie]+'</b> on '+(S.players.length>1?'<b>your own map</b>':'your map')+', then tap the square where you stop. Strength: <b>'+S.dice[1-S.moveDie]+'</b>. <span class="muted">The phone trusts your pencil: it does not check the path you drew.</span>':'No square can be reached with this die. Try the other one.');
   var h='<span></span>';for(var x=0;x<8;x++)h+='<span class="lab">'+COLS[x]+'</span>';
   for(var y=0;y<10;y++){h+='<span class="lab">'+(y+1)+'</span>';for(x=0;x<8;x++){var k=key(x,y),c='',t='';
@@ -149,6 +173,15 @@ function draw(){
   $('#statbox').innerHTML='<p class="eyebrow">Explorers</p>'+S.players.map(function(q){
     return '<p><b>'+GN.esc(q.name)+'</b> · <span class="hearts">'+'♥'.repeat(q.hearts)+'♡'.repeat(3-q.hearts)+'</span> · '+(q.dead?'<span class="pill bad">out of hearts</span>':q.out?'<span class="pill good">outside, safe</span>':'on '+q.pos)+'</p>'}).join('')+
     '<p class="muted small">Coins, guardians and relics are counted in the book.</p>'}
+function result(p,msg,kind){
+  var i=S.players.indexOf(p),nx=null;for(var j=i+1;j<S.players.length;j++){var q=S.players[j];if(!q.out&&!q.dead){nx=q;break}}
+  var R=$('#res');R.className='overlay on p'+i;
+  $('#res-eye').textContent='Turn '+S.turn+' of 10 · '+p.name;$('#res-title').textContent=p.name+"'s move is done";
+  $('#res-body').innerHTML=msg.map(function(t){return '<p>'+t+'</p>'}).join('');
+  var last=S.turn>=10||!S.players.some(function(q,j){return !q.out&&!q.dead});
+  if(nx){$('#res-lead').textContent='Now pass the phone to';$('#res-next').textContent=nx.name;$('#res-next').style.color=j===1?'#ff5a4e':'#ffd23f';$('#res-btn').textContent='I am '+nx.name}
+  else{$('#res-lead').textContent=last?'':(S.players.length>1?'Everyone has played turn '+S.turn+'.':'');$('#res-next').textContent='';$('#res-btn').textContent=last?'See the end of the adventure':'Start turn '+(S.turn+1)}
+  $('#res-btn').onclick=function(){GN.beep('tap');R.className='overlay';advance()};window.scrollTo(0,0)}
 function firstActive(){for(var i=0;i<S.players.length;i++)if(!S.players[i].out&&!S.players[i].dead)return i;return -1}
 function say(t,kind){S.news=[t];GN.beep(kind||'tap')}
 function hurt(p){p.hearts=Math.max(0,p.hearts-1);if(p.hearts===0){p.dead=true}}
@@ -157,14 +190,14 @@ $('#dice').addEventListener('click',function(e){var b=e.target.closest('button')
 $('#nudge').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;var d=+b.dataset.n;
   var v=S.dice[0]+d;if(v<1||v>6){return}S.dice[0]=v;S.nudged=true;S.moveDie=null;GN.beep('tap');draw()});
 $('#trap').addEventListener('click',function(){var p=S.players[S.cur];hurt(p);GN.beep('bad');
-  if(p.dead){S.news=['<b>'+GN.esc(p.name)+' has no hearts left.</b> The adventure ends here: score 0.'];return advance()}
-  S.news=['Ouch. One heart less for '+GN.esc(p.name)+'. Cross out the trap in the book.'];draw()});
+  if(p.dead){return result(p,['<b>'+GN.esc(p.name)+' has no hearts left.</b> The adventure ends here: score 0.'])}
+  S.warn='Ouch. One heart less for '+p.name+'. Cross out the trap in the book.';draw()});
 $('#stuck').addEventListener('click',function(){var p=S.players[S.cur];
-  if(canMove(p)){S.news=['You can still move: try the other die, or look for another path.'];GN.beep('bad');return draw()}
-  S.news=[GN.esc(p.name)+' is stuck this turn and stays on '+p.pos+'.'];advance()});
+  if(canMove(p)){S.warn='You can still move: try the other die, or look for another path.';GN.beep('bad');return draw()}
+  result(p,[GN.esc(p.name)+' is stuck this turn and stays on '+p.pos+'.'])});
 $('#mini').addEventListener('click',function(e){var b=e.target.closest('button');if(!b||S.moveDie===null)return;
   var p=S.players[S.cur],k=b.dataset.k,E=ends(p,S.dice[S.moveDie]);
-  if(!E[k]){S.news=[k===S.crack?'That square is cracking: you cannot stop there.':'You cannot stop on '+k+' with a move of '+S.dice[S.moveDie]+'. Check your path.'];GN.beep('bad');return draw()}
+  if(!E[k]){S.warn=k===S.crack?'That square is cracking: you cannot stop there.':'You cannot stop on '+k+' with a move of '+S.dice[S.moveDie]+'. Check your path.';GN.beep('bad');return draw()}
   arrive(p,k,S.dice[1-S.moveDie])});
 
 function arrive(p,k,str){
@@ -184,7 +217,7 @@ function arrive(p,k,str){
   else{msg.push(GN.esc(p.name)+' stops on '+k+'.');GN.beep('tap')}
   if(p.dead)msg.push('<b>'+GN.esc(p.name)+' has no hearts left.</b> The adventure ends here: score 0.');
   msg.push('Write the turn number ('+S.turn+') in square '+k+'.');
-  S.news=msg;p.done=true;advance()}
+  p.done=true;result(p,msg)}
 
 function endOfTurn(){
   var extra=[];
@@ -194,8 +227,7 @@ function endOfTurn(){
     active().forEach(function(p){if(p.pos===S.shadow&&p.pos!==DOOR){hurt(p);extra.push('<b>The Shadow catches '+GN.esc(p.name)+'!</b> Lose a heart. The Shadow slips back to its lair.');S.shadow=S.lair;GN.beep('bad');
       if(p.dead)extra.push('<b>'+GN.esc(p.name)+' has no hearts left.</b> Score 0.')}});
     if(!extra.length)extra.push('The Shadow creeps to '+S.shadow+'.')}
-  S.pending=(S.news||[]).concat(extra);
-  var keep=S.pending;nextTurn();if($('#v-play').classList.contains('on')){S.news=keep.concat(S.news||[]);draw()}}
+  var keep=extra;nextTurn();if($('#v-play').classList.contains('on')){S.news=keep.concat(S.news||[]);draw()}}
 
 function finish(){
   var h='';S.players.forEach(function(p,i){var st=p.dead?'Out of hearts: <b>score 0</b>.':p.out?'Made it out. Count coins, guardians, relics, treasures (+3 each) and 2 points per heart left.':'Still inside: <b>coins only</b>.';
