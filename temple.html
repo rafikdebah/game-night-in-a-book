@@ -32,7 +32,7 @@
       <select id="map"></select>
       <p class="muted small">The map number is printed at the top of the page in your book.</p>
       <label for="n1">Explorer 1</label><input type="text" id="n1" maxlength="14" placeholder="First name">
-      <label for="n2">Explorer 2 (leave empty to play alone)</label><input type="text" id="n2" maxlength="14" placeholder="First name">
+      <label for="n2">Explorer 2 (leave empty to play alone)</label><input type="text" id="n2" maxlength="14" placeholder="First name"><p class="muted small">Two explorers? Each one draws on their own copy of the same map number.</p>
       <p class="muted small">In a duel, each explorer draws on their own copy of the same map.</p>
     </div>
     <button id="start">Enter the temple</button>
@@ -88,35 +88,35 @@ function start(){
   var id=sel.value, map=window.TEMPLE_MAPS[id], names=[$('#n1').value.trim()||'Explorer 1'];if($('#n2').value.trim())names.push($('#n2').value.trim());
   var myst=Object.keys(map.cells).filter(function(k){return map.cells[k]==='q'}), kinds=GN.sample(['treasure','treasure','treasure','trap','trap','potion','empty','empty'],8), mk={};
   myst.forEach(function(k,i){mk[k]=kinds[i]||'empty'});
-  S={id:id,cells:JSON.parse(JSON.stringify(map.cells)),myst:mk,turn:0,blocked:{},crack:null,shadow:null,lair:null,
-     players:names.map(function(n){return {name:n,pos:DOOR,hearts:3,out:false,dead:false,left:false,done:false}}),cur:0,dice:[],moveDie:null,log:[]};
+  S={id:id,myst:mk,turn:0,blocked:{},crack:null,shadow:null,lair:null,
+     players:names.map(function(n){return {name:n,cells:JSON.parse(JSON.stringify(map.cells)),pos:DOOR,hearts:3,out:false,dead:false,left:false,done:false}}),cur:0,dice:[],moveDie:null,log:[]};
   show('play');nextTurn()}
 
 function active(){return S.players.filter(function(p){return !p.out&&!p.dead})}
 function nextTurn(){
   if(S.turn>=10||!active().length){return finish()}
   S.turn++;var news=[];
-  if(S.crack){S.blocked[S.crack]=1;delete S.cells[S.crack];news.push('<b>'+S.crack+' has collapsed.</b> Black it out on your map. Whatever was there is lost.');GN.beep('rumble');S.crack=null}
+  if(S.crack){S.blocked[S.crack]=1;S.players.forEach(function(q){delete q.cells[S.crack]});news.push('<b>'+S.crack+' has collapsed.</b> '+(S.players.length>1?'Everyone blacks it out on their own map.':'Black it out on your map.')+' Whatever was there is lost.');GN.beep('rumble');S.crack=null}
   if(S.turn===4){var corners=['A1','H1','A10','H10'].filter(function(k){return !S.blocked[k]});
     corners.sort(function(a,b){return minDist(b)-minDist(a)});S.lair=corners[0]||'A1';S.shadow=S.lair;news.push('<b>The Shadow wakes up on '+S.shadow+'.</b> It moves 2 squares toward you after every turn. If it catches you, you lose a heart.');GN.beep('alarm')}
   if(S.turn===6){news.push('<b>The temple is shaking.</b> Start thinking about your way back to the DOOR.');GN.beep('rumble')}
   if(S.turn===9){news.push('<b>Two turns left.</b> Anyone still inside after turn 10 keeps only their coins.')}
   if(S.turn<10){var free=[];for(var x=0;x<8;x++)for(var y=0;y<10;y++){var k=key(x,y);if(k!==DOOR&&!S.blocked[k]&&!S.players.some(function(p){return p.pos===k&&!p.out}))free.push(k)}
     S.crack=GN.pick(free);news.push('<b>'+S.crack+' is cracking.</b> It will collapse next turn. You may walk across it, but you cannot stop there.')}
-  S.dice=[GN.d6(),GN.d6()];S.nudged=false;S.cur=-1;S.news=news;S.players.forEach(function(p){p.done=false});
+  S.roll=[GN.d6(),GN.d6()];S.dice=S.roll.slice();S.nudged=false;S.cur=-1;S.news=news;S.players.forEach(function(p){p.done=false});
   advance()}
 function minDist(k){var d=99;active().forEach(function(p){d=Math.min(d,dist(k,p.pos))});return d}
 function advance(){
   do{S.cur++}while(S.cur<S.players.length&&(S.players[S.cur].out||S.players[S.cur].dead));
   if(S.cur>=S.players.length){return endOfTurn()}
-  S.moveDie=null;draw()}
+  S.dice=S.roll.slice();S.nudged=false;S.moveDie=null;draw()}
 
 /* legal end squares for a move of exactly n steps (stopping early is allowed only on the DOOR) */
 function ends(p,n){var res={},start=p.pos;
   (function go(k,left,seen){
     if(left===0){res[k]=1;return}
     nb(k).forEach(function(q){if(S.blocked[q]||seen[q])return;
-      var g=S.cells[q]&&S.cells[q][0]==='g';
+      var g=p.cells[q]&&p.cells[q][0]==='g';
       if(q===DOOR){res[q]=1}
       if(g&&left>1)return;
       var s2=Object.assign({},seen);s2[q]=1;go(q,left-1,s2)})
@@ -130,12 +130,12 @@ function draw(){
   $('#news').innerHTML=(S.news||[]).map(function(t){return '<p>'+t+'</p>'}).join('')||'<p class="muted">All quiet. For now.</p>';
   $('#who').textContent=(S.players.length>1?p.name+', your move':'Your move');
   $('#dice').innerHTML=S.dice.map(function(v,i){return GN.dieHTML(v,'button',S.moveDie===i?'pick':'','data-d="'+i+'"')}).join('');
-  var dbl=S.dice[0]===S.dice[1]&&!S.nudged&&S.cur===firstActive();
+  var dbl=S.roll[0]===S.roll[1]&&!S.nudged;
   $('#nudge').hidden=!dbl;
   $('#nudge').innerHTML=dbl?'<button class="ghost small" data-n="1">Doubles! Add 1 to one die</button><button class="ghost small" data-n="-1">Doubles! Take 1 off one die</button>':'';
   var E=S.moveDie===null?{}:ends(p,S.dice[S.moveDie]);
   $('#hint').innerHTML=S.moveDie===null?'Tap the die you move with. The other one is your Strength.':
-    (Object.keys(E).length?'Draw your path of <b>'+S.dice[S.moveDie]+'</b> in the book, then tap the square where you stop. Strength: <b>'+S.dice[1-S.moveDie]+'</b>.':'No square can be reached with this die. Try the other one.');
+    (Object.keys(E).length?'Draw your path of <b>'+S.dice[S.moveDie]+'</b> on '+(S.players.length>1?'<b>your own map</b>':'your map')+', then tap the square where you stop. Strength: <b>'+S.dice[1-S.moveDie]+'</b>. <span class="muted">The phone trusts your pencil: it does not check the path you drew.</span>':'No square can be reached with this die. Try the other one.');
   var h='<span></span>';for(var x=0;x<8;x++)h+='<span class="lab">'+COLS[x]+'</span>';
   for(var y=0;y<10;y++){h+='<span class="lab">'+(y+1)+'</span>';for(x=0;x<8;x++){var k=key(x,y),c='',t='';
     if(S.blocked[k]){c='blk'}else if(k===p.pos){c='me';t=p.name[0].toUpperCase()}
@@ -167,19 +167,19 @@ $('#mini').addEventListener('click',function(e){var b=e.target.closest('button')
   arrive(p,k,S.dice[1-S.moveDie])});
 
 function arrive(p,k,str){
-  p.pos=k;p.left=true;var c=S.cells[k],msg=[];
+  p.pos=k;p.left=true;var c=p.cells[k],msg=[];
   if(k===DOOR){p.out=true;msg.push('<b>'+GN.esc(p.name)+' is out of the temple, safe and sound!</b> Count everything on your map.');GN.beep('good')}
   else if(c&&c[0]==='g'){var lv=+c[1];
-    if(str>=lv){delete S.cells[k];msg.push('<b>Guardian beaten!</b> Strength '+str+' against level '+lv+'. Cross it out and score <b>'+lv+' points</b>.');GN.beep('good')}
+    if(str>=lv){delete p.cells[k];msg.push('<b>Guardian beaten!</b> Strength '+str+' against level '+lv+'. Cross it out and score <b>'+lv+' points</b>.');GN.beep('good')}
     else{hurt(p);msg.push('<b>The guardian wins.</b> Strength '+str+' against level '+lv+'. Lose a heart. To try again, step off and come back.');GN.beep('bad')}}
-  else if(c==='q'){var kind=S.myst[k];delete S.cells[k];
+  else if(c==='q'){var kind=S.myst[k];delete p.cells[k];
     if(kind==='treasure'){msg.push('<b>The ? hides a treasure chest!</b> Write +3 in that square.');GN.beep('good')}
     else if(kind==='trap'){hurt(p);msg.push('<b>The ? hides a trap.</b> Lose a heart.');GN.beep('bad')}
     else if(kind==='potion'){if(p.hearts<3){p.hearts++;msg.push('<b>The ? hides a healing potion.</b> Win back a heart.')}else msg.push('<b>The ? hides a healing potion</b>, but you already have all your hearts.');GN.beep('good')}
     else{msg.push('The ? hides... dust and cobwebs. Nothing here.');GN.beep('tap')}}
-  else if(c==='t'){hurt(p);delete S.cells[k];msg.push('<b>A trap!</b> Lose a heart and cross it out.');GN.beep('bad')}
-  else if(c==='r'){delete S.cells[k];msg.push('<b>A relic!</b> Circle it: 5 points if you make it out.');GN.beep('good')}
-  else if(c==='c'){delete S.cells[k];msg.push('A coin. Circle it, along with every coin on your path.');GN.beep('tap')}
+  else if(c==='t'){hurt(p);delete p.cells[k];msg.push('<b>A trap!</b> Lose a heart and cross it out.');GN.beep('bad')}
+  else if(c==='r'){delete p.cells[k];msg.push('<b>A relic!</b> Circle it: 5 points if you make it out.');GN.beep('good')}
+  else if(c==='c'){delete p.cells[k];msg.push('A coin. Circle it, along with every coin on your path.');GN.beep('tap')}
   else{msg.push(GN.esc(p.name)+' stops on '+k+'.');GN.beep('tap')}
   if(p.dead)msg.push('<b>'+GN.esc(p.name)+' has no hearts left.</b> The adventure ends here: score 0.');
   msg.push('Write the turn number ('+S.turn+') in square '+k+'.');

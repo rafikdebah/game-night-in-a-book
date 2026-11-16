@@ -21,7 +21,15 @@
 .rank.first .num,.rank.first h3{color:var(--gold)}
 .foot{display:flex;flex-direction:column;gap:10px}
 [hidden]{display:none!important}
-</style></head><body class="g-market"><main class="wrap">
+</style><style>
+#v-pass.on{position:fixed;inset:0;z-index:30;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;padding:24px}
+.passfull{width:100%;max-width:460px;text-align:center;display:flex;flex-direction:column;gap:14px}
+.passfull .eyebrow,.passfull .muted{color:var(--accent-ink);opacity:.75}
+.passlead{font-family:var(--display);font-size:22px;font-weight:600;margin:0}
+.passname{font-family:var(--display);font-weight:800;font-size:clamp(56px,20vw,112px);line-height:1;margin:0;overflow-wrap:anywhere}
+.passfull button{background:var(--paper);color:var(--accent);font-size:20px;padding:20px;margin-top:10px}
+</style>
+</head><body class="g-market"><main class="wrap">
 
 <div class="top"><a href="index.html">&lsaquo; Games</a><button class="ghost small" data-mute>Sound: on</button></div>
 <h1>The Grand Market</h1>
@@ -42,11 +50,13 @@
 
 <!-- Pass the phone (used before every private screen) -->
 <section class="view" id="v-pass">
-  <div class="card goldbox">
+  <div class="passfull">
     <p class="eyebrow" id="pass-eye"></p>
-    <h2 id="pass-title"></h2>
+    <p class="passlead">Pass the phone to</p>
+    <p class="passname" id="pass-title"></p>
     <p id="pass-text"></p>
     <button id="pass-btn"></button>
+    <p class="muted small">Everyone else: eyes off the screen.</p>
   </div>
 </section>
 
@@ -184,7 +194,7 @@ function maxBuy(p,k){return Math.max(0,Math.min(RULES.buyMax,RULES.cargoMax-held
 function humans(){return G.players.filter(function(p){return !p.bot})}
 
 /* pass-the-phone screen */
-function pass(eye,title,text,label,fn){$('#pass-eye').textContent=eye;$('#pass-title').textContent=title;$('#pass-text').textContent=text;
+function pass(eye,title,text,label,fn){var mid=/^Put /.test(title);$('.passlead').hidden=mid;$('#pass-title').style.fontSize=mid?'40px':'';$('#v-pass .small').hidden=mid;$('#pass-eye').textContent=eye;$('#pass-title').textContent=title;$('#pass-text').textContent=text;
   var b=$('#pass-btn');b.textContent=label;b.onclick=function(){GN.beep('tap');fn()};show('v-pass')}
 
 /* ---------- setup ---------- */
@@ -206,7 +216,7 @@ $('#go').onclick=function(){GN.wake();GN.beep('tap');
 function readContract(i){var hs=humans();
   if(i>=hs.length){pass('All set','Put the phone in the middle','Everyone knows their secret contract. Open the book at the Grand Market page.','Show the first prices',startTurn);return}
   var p=hs[i];
-  pass('Secret contract','Pass the phone to '+p.name,'Only '+p.name+' may look at the next screen.','I am '+p.name+': reveal my contract',function(){
+  pass('Secret contract',p.name,'Only '+p.name+' may look at the next screen.','I am '+p.name,function(){
     $('#ct-eye').textContent=p.name;$('#ct-text').textContent=contractText(p.contract);
     $('#ct-hide').onclick=function(){GN.beep('tap');readContract(i+1)};show('v-contract')})}
 
@@ -248,7 +258,7 @@ var draft=null,current=null;
 function askOrder(i){var hs=humans();
   if(i>=hs.length){pass('Orders are in','Put the phone in the middle','Every merchant has locked in an order. Ready?','Reveal all the orders',reveal);return}
   var p=hs[i];
-  pass('Turn '+G.turn+' · secret order','Pass the phone to '+p.name,'Only '+p.name+' may look at the next screen.','I am '+p.name+': show my screen',function(){drawPrivate(p,i)})}
+  pass('Turn '+G.turn+' · secret order',p.name,'Only '+p.name+' may look at the next screen.','I am '+p.name,function(){drawPrivate(p,i)})}
 
 function drawPrivate(p,i){current={p:p,i:i};draft={k:null,good:null,q:0};
   $('#pv-turn').textContent=p.name+' · turn '+G.turn+' of '+RULES.turns;
