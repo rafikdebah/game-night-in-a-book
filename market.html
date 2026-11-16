@@ -1,0 +1,363 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>The Grand Market</title><link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet"><link rel="stylesheet" href="shared.css">
+<style>
+.top button{width:auto;flex:0 0 auto}
+.top a{min-height:44px;display:flex;align-items:center}
+.prices{display:flex;flex-direction:column}
+.prow{display:grid;grid-template-columns:44px 1fr auto 76px;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.prow:first-child{border-top:0}
+.badge{width:44px;height:44px;border-radius:10px;border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:800;font-size:22px}
+.gname{font-weight:700}
+.prow .pill{justify-self:end;text-align:center;min-width:64px}
+.stat{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.cargo{display:flex;flex-wrap:wrap;gap:6px}
+.qty{display:flex;flex-wrap:wrap;gap:8px}
+.qty button{flex:1 1 44px;min-width:44px;min-height:48px;padding:8px}
+.goodbtn{display:flex;justify-content:space-between;align-items:center;gap:6px;text-align:left}
+.goodbtn span:last-child{font-family:var(--display);font-size:20px}
+.write{border:2px dashed var(--line);border-radius:10px;padding:8px 10px;font-weight:700}
+.arrow{font-family:var(--display);font-weight:800;font-size:24px;font-variant-numeric:tabular-nums}
+.rank{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.rank .num{color:var(--ink)}
+.rank.first .num,.rank.first h3{color:var(--gold)}
+.foot{display:flex;flex-direction:column;gap:10px}
+[hidden]{display:none!important}
+</style></head><body><main class="wrap">
+
+<div class="top"><a href="index.html">&lsaquo; Games</a><button class="ghost small" data-mute>Sound: on</button></div>
+<h1>The Grand Market</h1>
+
+<!-- 1. Setup -->
+<section class="view on" id="v-setup">
+  <div class="card">
+    <p class="eyebrow">Getting ready</p>
+    <h2>How many merchants?</h2>
+    <div class="row" id="count">
+      <button class="ghost" data-n="2">2</button><button class="ghost on" data-n="3">3</button><button class="ghost" data-n="4">4</button>
+    </div>
+    <p class="muted small" id="finn-note" hidden>With 2 players, the phone plays a third merchant: Old Finn.</p>
+    <div id="names" class="list"></div>
+    <button id="go">Open the market</button>
+  </div>
+</section>
+
+<!-- Pass the phone (used before every private screen) -->
+<section class="view" id="v-pass">
+  <div class="card goldbox">
+    <p class="eyebrow" id="pass-eye"></p>
+    <h2 id="pass-title"></h2>
+    <p id="pass-text"></p>
+    <button id="pass-btn"></button>
+  </div>
+</section>
+
+<!-- Secret contract, read once at the start -->
+<section class="view" id="v-contract">
+  <div class="card">
+    <p class="eyebrow" id="ct-eye"></p>
+    <h2>Your secret contract</h2>
+    <p id="ct-text"></p>
+    <p class="muted small">Keep it secret. You can read it again on your private screen.</p>
+    <button id="ct-hide">Hide and pass the phone</button>
+  </div>
+</section>
+
+<!-- 2. Public prices -->
+<section class="view" id="v-prices">
+  <p class="turn" id="pr-turn"></p>
+  <div class="card alertbox" id="pr-news" hidden>
+    <p class="eyebrow">Market news</p>
+    <p id="pr-news-text"></p>
+  </div>
+  <div class="card">
+    <p class="eyebrow">Prices this turn</p>
+    <div class="prices" id="pr-table"></div>
+    <p class="small"><b>Copy these 4 prices into the book.</b> Everyone buys and sells at these prices this turn.</p>
+  </div>
+  <div class="card" id="pr-income" hidden>
+    <p>Your stall earns 2 gold. The phone has added it for every merchant.</p>
+  </div>
+  <button id="pr-go">Start the secret orders</button>
+</section>
+
+<!-- 3. Private order screen -->
+<section class="view" id="v-private">
+  <p class="turn" id="pv-turn"></p>
+  <div class="card">
+    <div class="stat"><p class="eyebrow">Your gold</p><p class="num" id="pv-gold"></p></div>
+    <div class="stat"><p class="eyebrow">Your cargo</p><p class="small muted" id="pv-room"></p></div>
+    <div class="cargo" id="pv-cargo"></div>
+    <button class="ghost small" id="pv-ct-btn">See my contract again</button>
+    <p class="small" id="pv-ct" hidden></p>
+  </div>
+  <div class="card goldbox">
+    <p class="eyebrow">Your private rumor</p>
+    <p id="pv-rumor"></p>
+    <p class="muted small" id="pv-rumor-note"></p>
+  </div>
+  <div class="card">
+    <p class="eyebrow">Your one order this turn</p>
+    <div class="row" id="pv-kind">
+      <button class="ghost" data-k="B">Buy</button><button class="ghost" data-k="S">Sell</button><button class="ghost" data-k="P">Pass</button>
+    </div>
+    <div id="pv-step-good" hidden>
+      <label id="pv-good-label"></label>
+      <div class="grid2" id="pv-goods"></div>
+    </div>
+    <div id="pv-step-qty" hidden>
+      <label>How many units?</label>
+      <div class="qty" id="pv-qty"></div>
+    </div>
+    <p id="pv-sum" class="write" hidden></p>
+    <button id="pv-lock" disabled>Lock in my order</button>
+  </div>
+</section>
+
+<!-- 4. Reveal -->
+<section class="view" id="v-reveal">
+  <p class="turn" id="rv-turn"></p>
+  <div id="rv-list" class="view on"></div>
+  <p class="muted small">The phone keeps the true gold and cargo. Write the dashed line on your row in the book.</p>
+  <button id="rv-go"></button>
+</section>
+
+<!-- 5. The market reacts -->
+<section class="view" id="v-market">
+  <p class="turn">The market reacts</p>
+  <div class="card"><div class="list" id="mk-list"></div></div>
+  <button id="mk-go"></button>
+</section>
+
+<!-- 6. Final -->
+<section class="view" id="v-final">
+  <p class="turn">The market closes</p>
+  <div class="card goldbox">
+    <p class="eyebrow">Final ranking</p>
+    <div class="list" id="fn-rank"></div>
+  </div>
+  <div id="fn-detail" class="view on"></div>
+  <button id="fn-card">Make the winner's card</button>
+</section>
+
+<div class="foot">
+  <button class="ghost small" id="howto">How to play</button>
+  <button class="ghost small" id="newgame" hidden>New game</button>
+</div>
+
+</main><script src="shared.js"></script><script>
+(function(){
+"use strict";
+var $=GN.$, $$=GN.$$, esc=GN.esc;
+
+/* ---------- Rules: every number of the game lives here ---------- */
+var RULES={turns:8, startGold:12, income:2, cargoMax:6, buyMax:3, priceMin:1, priceMax:9,
+           startLow:3, startHigh:6, bonus:10, need:3, newsChance:0.45, shock:2, rumorTruth:0.75, pressureCap:2};
+var GOODS=[{k:'P',name:'Pepper'},{k:'S',name:'Silk'},{k:'T',name:'Tea'},{k:'W',name:'Wool'}];
+var KEYS=GOODS.map(function(g){return g.k});
+var NAME={};GOODS.forEach(function(g){NAME[g.k]=g.name});
+var NEWS_UP=['A ship sank: {g} will be rare next turn.','A storm closed the mountain road: {g} will be rare next turn.','The queen ordered a feast: everyone will want {g} next turn.'];
+var NEWS_DOWN=['A big caravan is coming: there will be lots of {g} next turn.','Three ships are sailing in, full of {g}.','A great harvest: {g} will be easy to find next turn.'];
+var HOWTO=[
+ 'You are merchants. Buy goods when they are cheap, sell them when they are dear. The richest merchant after 8 turns wins.',
+ 'Each turn, the phone shows the 4 prices to everyone. Copy them into the price table in the book and look for trends.',
+ 'Then the phone goes around. In secret, each merchant reads a private rumor and picks <b>one</b> order: Buy, Sell or Pass.',
+ 'All orders are revealed together. Then the market reacts: goods that were bought get dearer, goods that were sold get cheaper.'];
+
+var G=null;        /* the game state, kept in memory only */
+var count=3;
+
+/* ---------- small helpers ---------- */
+function show(id){$$('main>section.view').forEach(function(v){v.classList.toggle('on',v.id===id)});window.scrollTo(0,0)}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function emptyHold(){var o={};KEYS.forEach(function(k){o[k]=0});return o}
+function held(p){return KEYS.reduce(function(s,k){return s+p.cargo[k]},0)}
+function units(n){return n+(n===1?' unit':' units')}
+function signed(n){return (n>0?'+':'')+n}
+function cargoText(p){var a=KEYS.filter(function(k){return p.cargo[k]>0}).map(function(k){return p.cargo[k]+' '+NAME[k]});return a.length?a.join(', '):'empty'}
+function cargoShort(p){var a=KEYS.filter(function(k){return p.cargo[k]>0}).map(function(k){return p.cargo[k]+k});return a.length?a.join(' '):'empty'}
+function contractText(c){return c==='MIX'
+  ?'End the game with at least one unit of three different goods in your cargo: +'+RULES.bonus+' gold.'
+  :'End the game with at least '+RULES.need+' units of '+NAME[c]+' in your cargo: +'+RULES.bonus+' gold.'}
+function contractMet(p){if(!p.contract)return false;
+  if(p.contract==='MIX')return KEYS.filter(function(k){return p.cargo[k]>0}).length>=3;
+  return p.cargo[p.contract]>=RULES.need}
+function maxBuy(p,k){return Math.max(0,Math.min(RULES.buyMax,RULES.cargoMax-held(p),Math.floor(p.gold/G.price[k])))}
+function humans(){return G.players.filter(function(p){return !p.bot})}
+
+/* pass-the-phone screen */
+function pass(eye,title,text,label,fn){$('#pass-eye').textContent=eye;$('#pass-title').textContent=title;$('#pass-text').textContent=text;
+  var b=$('#pass-btn');b.textContent=label;b.onclick=function(){GN.beep('tap');fn()};show('v-pass')}
+
+/* ---------- setup ---------- */
+function drawNames(){var old=$$('#names input').map(function(i){return i.value});var h='';
+  for(var i=0;i<count;i++)h+='<div><label for="n'+i+'">Merchant '+(i+1)+'</label><input type="text" id="n'+i+'" maxlength="12" autocomplete="off" placeholder="First name" value="'+esc(old[i]||'')+'"></div>';
+  $('#names').innerHTML=h;$('#finn-note').hidden=count!==2;
+  $$('#count button').forEach(function(b){b.classList.toggle('on',+b.dataset.n===count)})}
+$$('#count button').forEach(function(b){b.onclick=function(){count=+b.dataset.n;GN.beep('tap');drawNames()}});
+
+function newPlayer(name,bot,contract){return {name:name,bot:bot,gold:RULES.startGold,cargo:emptyHold(),cost:emptyHold(),contract:contract}}
+$('#go').onclick=function(){GN.wake();GN.beep('tap');
+  var contracts=GN.sample(KEYS.concat(['MIX']),count),players=[];
+  for(var i=0;i<count;i++){var n=$('#n'+i).value.trim()||('Merchant '+(i+1));players.push(newPlayer(n,false,contracts[i]))}
+  if(count===2)players.push(newPlayer('Old Finn',true,null));
+  var price={};KEYS.forEach(function(k){price[k]=RULES.startLow+GN.rnd(RULES.startHigh-RULES.startLow+1)});
+  G={players:players,turn:0,price:price,prev:null,next:null,news:null,orders:[],reasons:[]};
+  $('#newgame').hidden=false;readContract(0)};
+
+function readContract(i){var hs=humans();
+  if(i>=hs.length){pass('All set','Put the phone in the middle','Everyone knows their secret contract. Open the book at the Grand Market page.','Show the first prices',startTurn);return}
+  var p=hs[i];
+  pass('Secret contract','Pass the phone to '+p.name,'Only '+p.name+' may look at the next screen.','I am '+p.name+': reveal my contract',function(){
+    $('#ct-eye').textContent=p.name;$('#ct-text').textContent=contractText(p.contract);
+    $('#ct-hide').onclick=function(){GN.beep('tap');readContract(i+1)};show('v-contract')})}
+
+/* ---------- market engine ---------- */
+/* the market's own mood for one good: prices drift, and bounce back from the edges */
+function mood(price){if(price<=2)return GN.pick([0,1,1,2]);if(price>=8)return GN.pick([0,-1,-1,-2]);return GN.pick([-2,-1,-1,0,0,1,1,2])}
+
+/* decided at the START of a turn, so that news and rumors can talk about it */
+function planNextTurn(){var plan={mood:{},shock:emptyHold(),news:null,rumors:[]};
+  if(G.turn>=RULES.turns)return plan;
+  KEYS.forEach(function(k){plan.mood[k]=mood(G.price[k])});
+  if(Math.random()<RULES.newsChance){var k=GN.pick(KEYS),up=Math.random()<0.5;plan.shock[k]=up?RULES.shock:-RULES.shock;
+    plan.news={k:k,up:up,text:GN.pick(up?NEWS_UP:NEWS_DOWN).replace('{g}',NAME[k])}}
+  /* one rumor per human, about different goods when possible, never about the good in the news */
+  var pool=KEYS.filter(function(k){return !plan.news||k!==plan.news.k}),hs=humans(),goods=GN.sample(pool,hs.length);
+  while(goods.length<hs.length)goods.push(GN.pick(pool));
+  hs.forEach(function(p,i){var k=goods[i],own=plan.mood[k]+plan.shock[k],truth=own>0?1:own<0?-1:0,said=truth;
+    if(Math.random()>=RULES.rumorTruth)said=GN.pick([-1,0,1].filter(function(x){return x!==truth}));
+    plan.rumors.push({k:k,dir:said})});
+  return plan}
+
+function startTurn(){G.turn++;
+  if(G.turn>1)G.players.forEach(function(p){p.gold+=RULES.income});
+  G.next=planNextTurn();G.orders=[];drawPrices();
+  GN.beep(G.next.news?'alarm':'tap');show('v-prices')}
+
+function drawPrices(){$('#pr-turn').textContent='Turn '+G.turn+' of '+RULES.turns;
+  $('#pr-table').innerHTML=GOODS.map(function(g){var p=G.price[g.k],d=G.prev?p-G.prev[g.k]:null;
+    var pill=d===null?'<span class="pill">start</span>':d>0?'<span class="pill good">&#9650; '+signed(d)+'</span>':d<0?'<span class="pill bad">&#9660; '+d+'</span>':'<span class="pill">same</span>';
+    return '<div class="prow"><span class="badge">'+g.k+'</span><span class="gname">'+g.name+'</span><span class="num">'+p+'</span>'+pill+'</div>'}).join('');
+  var n=G.next.news;$('#pr-news').hidden=!n;
+  if(n)$('#pr-news-text').textContent=n.text+' Its price will '+(n.up?'jump':'fall')+' by '+RULES.shock+'.';
+  $('#pr-income').hidden=G.turn===1;
+  $('#pr-go').textContent=G.turn===RULES.turns?'Start the last secret orders':'Start the secret orders'}
+$('#pr-go').onclick=function(){askOrder(0)};
+
+/* ---------- secret orders ---------- */
+var draft=null,current=null;
+function askOrder(i){var hs=humans();
+  if(i>=hs.length){pass('Orders are in','Put the phone in the middle','Every merchant has locked in an order. Ready?','Reveal all the orders',reveal);return}
+  var p=hs[i];
+  pass('Turn '+G.turn+' · secret order','Pass the phone to '+p.name,'Only '+p.name+' may look at the next screen.','I am '+p.name+': show my screen',function(){drawPrivate(p,i)})}
+
+function drawPrivate(p,i){current={p:p,i:i};draft={k:null,good:null,q:0};
+  $('#pv-turn').textContent=p.name+' · turn '+G.turn+' of '+RULES.turns;
+  $('#pv-gold').textContent=p.gold;
+  $('#pv-room').textContent=held(p)+' of '+RULES.cargoMax+' used';
+  $('#pv-cargo').innerHTML=held(p)?KEYS.filter(function(k){return p.cargo[k]>0}).map(function(k){return '<span class="pill">'+p.cargo[k]+' '+NAME[k]+'</span>'}).join(''):'<span class="muted small">Your cargo is empty.</span>';
+  $('#pv-ct').hidden=true;$('#pv-ct').textContent=contractText(p.contract);$('#pv-ct-btn').textContent='See my contract again';
+  var r=G.next.rumors[i];
+  if(r){$('#pv-rumor').textContent='"'+NAME[r.k]+(r.dir>0?' should climb next turn."':r.dir<0?' should drop next turn."':' should stay calm next turn."');
+    $('#pv-rumor-note').textContent='Rumors are right about 3 times out of 4. Orders can still push the price.'}
+  else{$('#pv-rumor').textContent='No rumor: this is the last turn.';
+    $('#pv-rumor-note').textContent='Goods you still hold after this turn sell for half price, rounded down.'}
+  var canBuy=KEYS.some(function(k){return maxBuy(p,k)>0}),canSell=held(p)>0;
+  $$('#pv-kind button').forEach(function(b){b.disabled=(b.dataset.k==='B'&&!canBuy)||(b.dataset.k==='S'&&!canSell)});
+  drawDraft();show('v-private')}
+
+function drawDraft(){var p=current.p,d=draft;
+  $$('#pv-kind button').forEach(function(b){b.classList.toggle('on',b.dataset.k===d.k)});
+  var trade=d.k==='B'||d.k==='S';
+  $('#pv-step-good').hidden=!trade;$('#pv-step-qty').hidden=!(trade&&d.good);
+  if(trade){$('#pv-good-label').textContent=d.k==='B'?'Buy which good?':'Sell which good?';
+    $('#pv-goods').innerHTML=GOODS.map(function(g){var ok=d.k==='B'?maxBuy(p,g.k)>0:p.cargo[g.k]>0;
+      return '<button class="ghost small goodbtn'+(d.good===g.k?' on':'')+'" data-g="'+g.k+'"'+(ok?'':' disabled')+'><span>'+g.name+'</span><span>'+G.price[g.k]+'</span></button>'}).join('');
+    $$('#pv-goods button').forEach(function(b){b.onclick=function(){d.good=b.dataset.g;d.q=0;GN.beep('tap');drawDraft()}})}
+  if(trade&&d.good){var max=d.k==='B'?maxBuy(p,d.good):p.cargo[d.good],top=d.k==='B'?RULES.buyMax:p.cargo[d.good],h='';
+    for(var q=1;q<=top;q++)h+='<button class="ghost'+(d.q===q?' on':'')+'" data-q="'+q+'"'+(q>max?' disabled':'')+'>'+q+'</button>';
+    $('#pv-qty').innerHTML=h;
+    $$('#pv-qty button').forEach(function(b){b.onclick=function(){d.q=+b.dataset.q;GN.beep('tap');drawDraft()}})}
+  var ready=d.k==='P'||(trade&&d.good&&d.q>0),sum=$('#pv-sum');sum.hidden=!ready;
+  if(ready)sum.textContent=d.k==='P'?'Pass: you keep your gold and your cargo.'
+    :(d.k==='B'?'Buy ':'Sell ')+units(d.q)+' of '+NAME[d.good]+' for '+d.q*G.price[d.good]+' gold.';
+  $('#pv-lock').disabled=!ready}
+$$('#pv-kind button').forEach(function(b){b.onclick=function(){draft={k:b.dataset.k,good:null,q:0};GN.beep('tap');drawDraft()}});
+$('#pv-ct-btn').onclick=function(){var t=$('#pv-ct');t.hidden=!t.hidden;this.textContent=t.hidden?'See my contract again':'Hide my contract'};
+$('#pv-lock').onclick=function(){G.orders[G.players.indexOf(current.p)]=draft.k==='P'?null:{k:draft.k,good:draft.good,q:draft.q};
+  GN.beep('tap');askOrder(current.i+1)};
+
+/* Old Finn: sells at 6 or more, buys the cheapest good at 4 or less, sometimes just naps */
+function finnOrder(p){if(Math.random()<0.15)return null;
+  var mine=KEYS.filter(function(k){return p.cargo[k]>0}),best=function(a,f){return a.reduce(function(x,y){return f(y)>f(x)?y:x})};
+  if(G.turn===RULES.turns&&mine.length){var v=best(mine,function(k){return p.cargo[k]*G.price[k]});return {k:'S',good:v,q:p.cargo[v]}}
+  var dear=mine.filter(function(k){return G.price[k]>=6});
+  if(dear.length){var s=best(dear,function(k){return G.price[k]});return {k:'S',good:s,q:p.cargo[s]}}
+  var low=Math.min.apply(null,KEYS.map(function(k){return G.price[k]}));
+  if(low<=4&&G.turn<RULES.turns){var b=GN.pick(KEYS.filter(function(k){return G.price[k]===low})),q=Math.min(GN.pick([2,3]),maxBuy(p,b));
+    if(q>0)return {k:'B',good:b,q:q}}
+  return null}
+
+/* ---------- reveal: all orders run at this turn's prices ---------- */
+function reveal(){var profitSale=false,html='';
+  G.players.forEach(function(p,i){if(p.bot)G.orders[i]=finnOrder(p)});
+  G.players.forEach(function(p,i){var o=G.orders[i],line,extra='';
+    if(!o){line='Pass'}
+    else{var total=o.q*G.price[o.good];
+      if(o.k==='B'){p.gold-=total;p.cargo[o.good]+=o.q;p.cost[o.good]+=total;line='Buys '+units(o.q)+' of '+NAME[o.good]+' for '+total+' gold'}
+      else{var paid=Math.round(p.cost[o.good]*o.q/p.cargo[o.good]),gain=total-paid;p.gold+=total;p.cargo[o.good]-=o.q;p.cost[o.good]-=paid;
+        line='Sells '+units(o.q)+' of '+NAME[o.good]+' for '+total+' gold';
+        extra=gain>0?' <span class="pill good">profit '+signed(gain)+'</span>':gain<0?' <span class="pill bad">loss '+gain+'</span>':'';
+        if(gain>0&&!p.bot)profitSale=true}}
+    html+='<div class="card"><p class="eyebrow">'+esc(p.name)+(p.bot?' · played by the phone':'')+'</p><h3>'+line+extra+'</h3>'+
+      '<p class="write">Write: Gold '+p.gold+' · Cargo '+cargoShort(p)+'</p></div>'});
+  $('#rv-turn').textContent='Turn '+G.turn+' · all orders';$('#rv-list').innerHTML=html;
+  $('#rv-go').textContent=G.turn===RULES.turns?'Close the market and count the gold':'See how the market reacts';
+  GN.beep(profitSale?'good':'tap');show('v-reveal')}
+$('#rv-go').onclick=function(){GN.beep('tap');if(G.turn===RULES.turns)finish();else react()};
+
+/* ---------- the market reacts ---------- */
+function react(){var buys=emptyHold(),sells=emptyHold(),next={},html='';
+  G.orders.forEach(function(o){if(o)(o.k==='B'?buys:sells)[o.good]++});
+  GOODS.forEach(function(g){var k=g.k,b=buys[k],s=sells[k],push=clamp(b-s,-RULES.pressureCap,RULES.pressureCap),m=G.next.mood[k],sh=G.next.shock[k];
+    var raw=G.price[k]+m+sh+push,p=clamp(raw,RULES.priceMin,RULES.priceMax),d=p-G.price[k],why=[];
+    var who=function(n){return n+(n===1?' merchant':' merchants')};
+    if(b&&s)why.push(who(b)+' bought and '+who(s)+' sold '+g.name+': '+(push>0?'the buyers push it up ('+signed(push)+')':push<0?'the sellers push it down ('+push+')':'they cancel out'));
+    else if(b)why.push(who(b)+' bought '+g.name+': the price climbs ('+signed(push)+')');
+    else if(s)why.push(who(s)+' sold '+g.name+': the price drops ('+push+')');
+    else why.push('Nobody traded '+g.name);
+    if(sh)why.push('the news came true ('+signed(sh)+')');
+    why.push(m>0?'the market feels lively ('+signed(m)+')':m<0?'the market feels sleepy ('+m+')':'the market stays calm (0)');
+    if(raw!==p)why.push('prices never go '+(raw>p?'above '+RULES.priceMax:'below '+RULES.priceMin));
+    next[k]=p;
+    html+='<div><div class="stat"><span class="gname"><span class="pill">'+k+'</span> '+g.name+'</span><span class="arrow">'+G.price[k]+' &rarr; '+p+
+      ' <span class="pill '+(d>0?'good':d<0?'bad':'')+'">'+(d===0?'same':signed(d))+'</span></span></div><p class="small muted">'+why.join(', ')+'.</p></div>'});
+  G.prev=G.price;G.price=next;$('#mk-list').innerHTML=html;$('#mk-go').textContent='Start turn '+(G.turn+1);show('v-market')}
+$('#mk-go').onclick=function(){startTurn()};
+
+/* ---------- end of the game ---------- */
+function finish(){var rows=G.players.map(function(p){
+    var sale=KEYS.reduce(function(s,k){return s+p.cargo[k]*Math.floor(G.price[k]/2)},0),ok=contractMet(p),bonus=ok?RULES.bonus:0;
+    return {p:p,gold:p.gold,sale:sale,ok:ok,bonus:bonus,total:p.gold+sale+bonus}});
+  rows.sort(function(a,b){return b.total-a.total});
+  var top=rows[0].total,winners=rows.filter(function(r){return r.total===top});
+  $('#fn-rank').innerHTML=rows.map(function(r){var first=r.total===top;
+    return '<div class="rank'+(first?' first':'')+'"><h3>'+(first?'1':rows.filter(function(x){return x.total>r.total}).length+1)+'. '+esc(r.p.name)+'</h3><span class="num">'+r.total+'</span></div>'}).join('');
+  $('#fn-detail').innerHTML=rows.map(function(r){var p=r.p;
+    return '<div class="card"><p class="eyebrow">'+esc(p.name)+'</p><div class="list">'+
+      '<div class="stat"><span>Gold after turn 8</span><b>'+r.gold+'</b></div>'+
+      '<div class="stat"><span>Cargo sold at half price<br><span class="muted small">'+cargoText(p)+'</span></span><b>'+signed(r.sale)+'</b></div>'+
+      '<div class="stat"><span>'+(p.contract?'Contract '+(r.ok?'done':'missed')+'<br><span class="muted small">'+contractText(p.contract)+'</span>':'No contract for Old Finn')+'</span><b>'+signed(r.bonus)+'</b></div>'+
+      '<div class="stat"><b>Final gold</b><span class="num">'+r.total+'</span></div></div></div>'}).join('');
+  var names=winners.map(function(r){return r.p.name});
+  $('#fn-card').onclick=function(){GN.card({game:'The Grand Market',
+    headline:winners.length>1?names.join(' and ')+' share the market!':names[0]+' rules the market!',
+    rows:rows.map(function(r){return {name:r.p.name,score:r.total}}),unit:'gold',note:'8 turns of buying low and selling high.'})};
+  GN.beep('good');show('v-final')}
+
+/* ---------- footer ---------- */
+$('#howto').onclick=function(){GN.howto('The Grand Market',HOWTO)};
+GN.confirmBtn($('#newgame'),'Tap again to start over',function(){G=null;$('#newgame').hidden=true;drawNames();show('v-setup')});
+
+drawNames();GN.wake();GN.howto('The Grand Market',HOWTO);
+})();
+</script></body></html>

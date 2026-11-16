@@ -1,0 +1,395 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Save the Village</title><link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet"><link rel="stylesheet" href="shared.css">
+<style>
+.top button{width:auto}
+.bar{height:14px;border:1.5px solid var(--line);border-radius:999px;overflow:hidden;background:var(--paper)}
+.bar i{display:block;height:100%;width:100%;background:var(--accent)}
+.bar.out i{background:var(--alert)}
+.crisis .head{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+.crisis .target{text-align:right;flex:none}
+.crisis.stopped{border-color:var(--accent)}
+.crisis.failed{border-color:var(--alert)}
+.mini{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.place{border:1.5px solid var(--line);border-radius:10px;padding:8px 6px;display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center;font-size:14px;font-weight:700;line-height:1.2}
+.place.gone{opacity:.55;text-decoration:line-through;border-style:dashed}
+.boxes{display:flex;gap:4px}
+.boxes i{width:14px;height:14px;border:2px solid var(--ink);border-radius:3px}
+.boxes i.x{background:var(--ink)}
+.boxes i.new{background:var(--alert);border-color:var(--alert)}
+.secret{min-height:150px;justify-content:center;text-align:center}
+.steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px}
+details summary{font-weight:700;cursor:pointer;min-height:44px;display:flex;align-items:center}
+[hidden]{display:none!important}
+</style>
+</head><body><main class="wrap">
+
+<div class="top"><a href="index.html">&lsaquo; Games</a><button class="ghost small" data-mute>Sound: on</button></div>
+
+<!-- SETUP -->
+<section class="view on" id="v-setup">
+  <div><p class="eyebrow">Co-op game &middot; 1 to 4 players</p><h1>Save the Village</h1></div>
+  <p>Trouble is coming for ten turns. Work as one team, use your dice well, and keep the village standing.</p>
+  <div class="card">
+    <label>How many players?</label>
+    <div class="row" id="pick-players"></div>
+    <label>How hard?</label>
+    <div class="row" id="pick-diff"></div>
+    <p class="muted small" id="diff-note"></p>
+    <label class="check"><input type="checkbox" id="opt-timer" checked> Timer: 60 seconds to decide</label>
+    <label class="check" id="sab-line" hidden><input type="checkbox" id="opt-sab"> Secret saboteur</label>
+    <p class="muted small" id="sab-note" hidden>One player secretly wants the village to fall. Nobody knows who.</p>
+  </div>
+  <button id="btn-start">Start the game</button>
+  <button class="ghost small" id="btn-howto">How to play</button>
+</section>
+
+<!-- SECRET ROLES -->
+<section class="view" id="v-secret">
+  <p class="eyebrow">Secret roles</p>
+  <h1 id="sec-title"></h1>
+  <div class="card secret" id="sec-card"></div>
+  <button id="sec-btn"></button>
+</section>
+
+<!-- TURN -->
+<section class="view" id="v-turn">
+  <div class="row" style="align-items:center"><p class="turn" id="turn-title"></p><p class="muted small" id="turn-sub" style="text-align:right"></p></div>
+  <div id="timer-box" hidden><div class="bar" id="bar"><i></i></div><p class="small muted" id="timer-msg" aria-live="polite"></p></div>
+  <div class="card">
+    <p class="eyebrow" id="dice-title">Your dice</p>
+    <div class="dice" id="dice"></div>
+    <p class="muted small" id="dice-hint">Tap a die to dim it once you have used it.</p>
+    <button class="ghost small" id="btn-reroll"></button>
+  </div>
+  <div id="crises" class="view on"></div>
+  <button id="btn-end" disabled>End the turn</button>
+  <details class="card"><summary>Role reminder</summary>
+    <p class="small"><b>The Blacksmith</b> (2 times): add 2 to one die. It can go above 6.</p>
+    <p class="small"><b>The Lookout</b> (2 times): reroll one die. Use the button above.</p>
+    <p class="small"><b>The Healer</b> (2 times): cancel 1 damage box. The phone asks you after the turn.</p>
+    <p class="small"><b>The Builder</b> (1 time): stop a trouble with a target of 6 or less, with no dice. Just tap Stopped.</p>
+    <p class="small muted">The barn holds up to 2 saved dice. Track the barn and the roles on your page.</p>
+  </details>
+  <div class="card"><p class="eyebrow">The village now</p><div class="mini" id="mini-turn"></div></div>
+</section>
+
+<!-- HEALER -->
+<section class="view" id="v-heal">
+  <p class="turn" id="heal-title"></p>
+  <div class="card alertbox"><p class="eyebrow">Damage on the way</p><div class="list" id="heal-list"></div></div>
+  <p class="muted small" id="heal-left"></p>
+  <button id="btn-apply">Apply the damage</button>
+  <button class="ghost small" id="btn-heal-back">Back to the turn</button>
+</section>
+
+<!-- RESULT -->
+<section class="view" id="v-result">
+  <p class="turn" id="res-title"></p>
+  <div class="card" id="res-card"><p class="eyebrow">On your page</p><div class="list" id="res-list"></div></div>
+  <div class="card"><p class="eyebrow">The village now</p><div class="mini" id="mini-res"></div>
+    <p class="muted small">Red boxes are new. Your page is the real record: the barn and the roles live there.</p></div>
+  <button id="btn-next"></button>
+</section>
+
+<!-- END -->
+<section class="view" id="v-end">
+  <div class="card" id="end-card"></div>
+  <div class="card" id="sab-card" hidden></div>
+  <div class="card"><p class="eyebrow">The village at the end</p><div class="mini" id="mini-end"></div></div>
+  <div class="card">
+    <label for="names">Player names, with commas between them</label>
+    <input type="text" id="names" placeholder="Mia, Leo, Dad" autocomplete="off">
+    <button id="btn-card">Make the winner's card</button>
+  </div>
+</section>
+
+<button class="ghost small" id="btn-new" hidden>New game</button>
+
+</main><script src="shared.js"></script><script>
+(function(){
+"use strict";
+var $=GN.$, $$=GN.$$;
+
+/* ---------- rules data ---------- */
+var PLACES=['The Mill','The Well','The Forge','The Fields','The Bridge','The School'];
+var BOXES=4, TURNS=10, LOSE_AT=3, TIMER_S=60;
+var DIFFS=[{id:'easy',label:'Easy',mod:-1,note:'Easy: every target is 1 lower.'},
+           {id:'normal',label:'Normal',mod:0,note:'Normal: the real thing.'},
+           {id:'hard',label:'Hard',mod:1,note:'Hard: every target is 1 higher.'}];
+var TYPES={
+  fire:{name:'Fire',effect:function(c){return c.spread===null?'':' The fire also spreads: 1 box on '+PLACES[c.spread]+'.'}},
+  flood:{name:'Flood',effect:function(){return ' The water also washes out the barn: cross out every die saved there.'}},
+  storm:{name:'Storm',effect:function(){return ' Next turn you also get only 3 dice instead of 4.'}},
+  bandits:{name:'Bandits',effect:function(){return ' Nothing more.'}}
+};
+var TYPE_IDS=['fire','flood','storm','bandits'];
+function phase(t){ /* crises, lowest target, highest target, damage */
+  if(t<=3)return {n:2,lo:5,hi:8,dmg:1};
+  if(t<=7)return {n:3,lo:6,hi:10,dmg:2};
+  return {n:3,lo:6,hi:11,dmg:2};
+}
+var HOWTO=[
+  'You are one team. For 10 turns, trouble hits the village. Keep it standing!',
+  'Each turn the phone shows the trouble and rolls 4 dice. Put dice on a trouble. If they add up to its target, it is stopped.',
+  'Tell the phone what you stopped. It tells you which damage boxes to check on your page. 4 boxes destroy a place.',
+  'Lose 3 places and the village falls. Save a spare die in the barn, and use your 4 roles at the right time.'
+];
+
+/* ---------- state (memory only, nothing is stored) ---------- */
+var S=null, setup={players:2,diff:'normal'}, timerId=null;
+function boxWord(n){return n===1?'1 box':n+' boxes'}
+function standing(){var a=[];S.dmg.forEach(function(d,i){if(d<BOXES)a.push(i)});return a}
+function destroyedCount(){return S.dmg.filter(function(d){return d>=BOXES}).length}
+function nextStanding(loc){for(var k=1;k<6;k++){var j=(loc+k)%6;if(S.dmg[j]<BOXES)return j}return null}
+function show(id){$$('main>.view').forEach(function(v){v.classList.toggle('on',v.id===id)});window.scrollTo(0,0)}
+
+/* ---------- setup ---------- */
+function drawSetup(){
+  $('#pick-players').innerHTML=[1,2,3,4].map(function(n){return '<button class="small ghost'+(setup.players===n?' on':'')+'" data-p="'+n+'">'+n+'</button>'}).join('');
+  $('#pick-diff').innerHTML=DIFFS.map(function(d){return '<button class="small ghost'+(setup.diff===d.id?' on':'')+'" data-d="'+d.id+'">'+d.label+'</button>'}).join('');
+  $('#diff-note').textContent=DIFFS.filter(function(d){return d.id===setup.diff})[0].note;
+  var can=setup.players>=3;
+  $('#sab-line').hidden=!can;
+  if(!can)$('#opt-sab').checked=false;
+  $('#sab-note').hidden=!(can&&$('#opt-sab').checked);
+}
+$('#pick-players').addEventListener('click',function(e){var b=e.target.closest('[data-p]');if(!b)return;setup.players=+b.dataset.p;GN.beep('tap');drawSetup()});
+$('#pick-diff').addEventListener('click',function(e){var b=e.target.closest('[data-d]');if(!b)return;setup.diff=b.dataset.d;GN.beep('tap');drawSetup()});
+$('#opt-sab').addEventListener('change',drawSetup);
+$('#btn-howto').addEventListener('click',function(){GN.howto('Save the Village',HOWTO)});
+
+$('#btn-start').addEventListener('click',function(){
+  GN.wake();GN.beep('tap');
+  var sab=setup.players>=3&&$('#opt-sab').checked;
+  S={players:setup.players,mod:DIFFS.filter(function(d){return d.id===setup.diff})[0].mod,
+     timer:$('#opt-timer').checked,saboteur:sab?GN.rnd(setup.players):-1,
+     turn:0,dmg:[0,0,0,0,0,0],nextDice:4,lookout:2,healer:2,
+     dice:[],dim:[],crises:[],rerollMode:false,pending:null,over:false,won:false,score:0};
+  $('#btn-new').hidden=false;
+  if(sab){secretStep(0,false)}else{startTurn()}
+});
+
+/* ---------- secret saboteur: pass the phone ---------- */
+function secretStep(i,open){
+  show('v-secret');
+  if(i>=S.players){
+    $('#sec-title').textContent='Roles are set';
+    $('#sec-card').innerHTML='<p>Everyone knows their secret. Put the phone in the middle of the table.</p><p class="muted small">Saboteur, play along and do not get caught!</p>';
+    $('#sec-btn').textContent='Start turn 1';$('#sec-btn').onclick=function(){GN.beep('tap');startTurn()};return;
+  }
+  $('#sec-title').textContent='Pass the phone to player '+(i+1);
+  if(!open){
+    $('#sec-card').innerHTML='<p>Player '+(i+1)+', make sure nobody else can see the screen.</p>';
+    $('#sec-btn').textContent='Show my secret role';
+    $('#sec-btn').onclick=function(){GN.beep('tap');secretStep(i,true)};
+  }else{
+    var bad=i===S.saboteur;
+    $('#sec-card').innerHTML='<p class="eyebrow">Player '+(i+1)+', you are</p><p class="num">'+(bad?'The saboteur':'Loyal villager')+'</p><p>'+
+      (bad?'You win if the village falls. Give bad advice, waste dice, but stay hidden.':'Save the village. Watch out: one of your friends is a saboteur.')+'</p>';
+    $('#sec-btn').textContent='Hide it and pass the phone';
+    $('#sec-btn').onclick=function(){GN.beep('tap');secretStep(i+1,false)};
+  }
+}
+
+/* ---------- a turn ---------- */
+function startTurn(){
+  S.turn++;
+  var ph=phase(S.turn);
+  var count=S.nextDice;S.nextDice=4;
+  S.dice=[];S.dim=[];for(var i=0;i<count;i++){S.dice.push(GN.d6());S.dim.push(false)}
+  S.rerollMode=false;S.pending=null;
+  S.crises=GN.sample(standing(),ph.n).sort(function(a,b){return a-b}).map(function(loc){
+    var type=GN.pick(TYPE_IDS);
+    return {loc:loc,type:type,dmg:ph.dmg,target:ph.lo+GN.rnd(ph.hi-ph.lo+1)+S.mod,
+            spread:type==='fire'?nextStanding(loc):null,stopped:null};
+  });
+  $('#turn-title').textContent='Turn '+S.turn+' of '+TURNS;
+  $('#turn-sub').textContent=destroyedCount()+' of '+LOSE_AT+' places lost';
+  drawDice();drawCrises();drawMini('#mini-turn');
+  show('v-turn');startTimer();
+}
+function drawDice(){
+  $('#dice-title').textContent=S.dice.length<4?'Your dice (only '+S.dice.length+', the storm took one)':'Your dice';
+  $('#dice').innerHTML=S.dice.map(function(v,i){return GN.dieHTML(v,'button',(S.dim[i]?'used ':'')+(S.rerollMode?'pick':''),'data-i="'+i+'"')}).join('');
+  var b=$('#btn-reroll');
+  b.disabled=S.lookout<=0;
+  b.classList.toggle('on',S.rerollMode);
+  b.textContent=S.rerollMode?'Now tap the die to reroll (tap here to cancel)':(S.lookout>0?'Reroll a die (Lookout: '+S.lookout+' left)':'Reroll a die (Lookout: none left)');
+  $('#dice-hint').textContent=S.rerollMode?'Lookout: pick the die you want to roll again.':'Tap a die to dim it once you have used it.';
+}
+$('#btn-reroll').addEventListener('click',function(){if(S.lookout<=0)return;S.rerollMode=!S.rerollMode;GN.beep('tap');drawDice()});
+$('#dice').addEventListener('click',function(e){
+  var d=e.target.closest('[data-i]');if(!d)return;var i=+d.dataset.i;
+  if(S.rerollMode){S.dice[i]=GN.d6();S.dim[i]=false;S.lookout--;S.rerollMode=false}
+  else{S.dim[i]=!S.dim[i]}
+  GN.beep('tap');drawDice();
+});
+function drawCrises(){
+  $('#crises').innerHTML=S.crises.map(function(c,i){
+    var T=TYPES[c.type],place=PLACES[c.loc];
+    return '<div class="card crisis'+(c.stopped===true?' stopped':c.stopped===false?' failed':'')+'">'+
+      '<div class="head"><div><p class="eyebrow">'+T.name+' at place '+(c.loc+1)+'</p><h2>'+place+'</h2></div>'+
+      '<div class="target"><p class="eyebrow">Target</p><p class="big">'+c.target+'</p></div></div>'+
+      '<p class="small"><b>If not stopped:</b> check '+boxWord(c.dmg)+' on '+place+'.'+T.effect(c)+'</p>'+
+      '<div class="grid2"><button class="small ghost'+(c.stopped===true?' on':'')+'" data-c="'+i+'" data-s="1">Stopped</button>'+
+      '<button class="small ghost'+(c.stopped===false?' on':'')+'" data-c="'+i+'" data-s="0">Not stopped</button></div></div>';
+  }).join('');
+  $('#btn-end').disabled=S.crises.some(function(c){return c.stopped===null});
+}
+$('#crises').addEventListener('click',function(e){
+  var b=e.target.closest('[data-c]');if(!b)return;
+  S.crises[+b.dataset.c].stopped=b.dataset.s==='1';GN.beep('tap');drawCrises();
+});
+
+/* ---------- timer: pressure only, it never blocks ---------- */
+function stopTimer(){if(timerId){clearInterval(timerId);timerId=null}}
+function startTimer(){
+  stopTimer();
+  var box=$('#timer-box'),bar=$('#bar'),fill=$('#bar i'),msg=$('#timer-msg');
+  box.hidden=!S.timer;if(!S.timer)return;
+  bar.classList.remove('out');fill.style.width='100%';msg.textContent=TIMER_S+' seconds to decide';msg.className='small muted';
+  var end=Date.now()+TIMER_S*1000;
+  timerId=setInterval(function(){
+    var left=Math.max(0,end-Date.now());
+    fill.style.width=(left/(TIMER_S*10))+'%';
+    if(left<=0){stopTimer();bar.classList.add('out');fill.style.width='100%';msg.textContent='Time\'s up! Decide now.';msg.className='err';GN.beep('alarm')}
+    else{msg.textContent=Math.ceil(left/1000)+' seconds to decide'}
+  },250);
+}
+
+/* ---------- end of turn: damage, healer, result ---------- */
+function computeDamage(){ /* boxes per place, in place order, never more than the boxes left */
+  var m={};
+  function add(loc,n,why){if(!m[loc])m[loc]={loc:loc,n:0,why:[],healed:0};m[loc].n+=n;m[loc].why.push(why)}
+  S.crises.forEach(function(c){
+    if(c.stopped)return;
+    add(c.loc,c.dmg,TYPES[c.type].name);
+    if(c.type==='fire'&&c.spread!==null)add(c.spread,1,'fire spreading from '+PLACES[c.loc]);
+  });
+  return Object.keys(m).map(function(k){var d=m[k];d.n=Math.min(d.n,BOXES-S.dmg[d.loc]);return d}).sort(function(a,b){return a.loc-b.loc});
+}
+$('#btn-end').addEventListener('click',function(){
+  stopTimer();GN.beep('tap');
+  S.pending=computeDamage();
+  if(S.pending.length&&S.healer>0){drawHeal();show('v-heal')}else{applyTurn()}
+});
+function drawHeal(){
+  $('#heal-title').textContent='Turn '+S.turn+': use the Healer?';
+  $('#heal-list').innerHTML=S.pending.map(function(d,i){
+    var after=S.dmg[d.loc]+d.n;
+    return '<div><p><b>'+PLACES[d.loc]+'</b>: '+(d.n?boxWord(d.n):'no damage')+
+      (after>=BOXES?' <span class="pill bad">will be destroyed</span>':'')+'</p>'+
+      '<p class="muted small">From: '+GN.esc(d.why.join(', '))+'.'+(d.healed?' Healer canceled '+boxWord(d.healed)+'.':'')+'</p>'+
+      (S.healer>0&&d.n>0?'<button class="small ghost" data-h="'+i+'" style="margin-top:8px">Healer: cancel 1 box</button>':'')+'</div>';
+  }).join('');
+  $('#heal-left').textContent='The Healer has '+S.healer+(S.healer===1?' use':' uses')+' left. You can also keep them for later.';
+}
+$('#heal-list').addEventListener('click',function(e){
+  var b=e.target.closest('[data-h]');if(!b||S.healer<=0)return;
+  var d=S.pending[+b.dataset.h];if(d.n<=0)return;
+  d.n--;d.healed++;S.healer--;GN.beep('good');drawHeal();
+});
+$('#btn-heal-back').addEventListener('click',function(){
+  S.pending.forEach(function(d){S.healer+=d.healed});S.pending=null;
+  drawCrises();show('v-turn');
+});
+$('#btn-apply').addEventListener('click',applyTurn);
+
+function applyTurn(){
+  var lines=[],fresh={},fell=[],healed=0;
+  var allStopped=S.crises.every(function(c){return c.stopped});
+  S.pending.forEach(function(d){
+    healed+=d.healed;
+    if(d.n>0){
+      S.dmg[d.loc]+=d.n;fresh[d.loc]=d.n;
+      lines.push('<b>Check '+boxWord(d.n)+' on '+PLACES[d.loc]+'.</b>');
+      if(S.dmg[d.loc]>=BOXES)fell.push(d.loc);
+    }
+  });
+  fell.forEach(function(loc){lines.push('<span class="err">'+PLACES[loc]+' is destroyed. Cross it out.</span>')});
+  if(healed)lines.push('Healer: fill in '+(healed===1?'1 use circle':healed+' use circles')+'.');
+  var flood=false,storm=false;
+  S.crises.forEach(function(c){if(!c.stopped){if(c.type==='flood')flood=true;if(c.type==='storm')storm=true}});
+  S.over=destroyedCount()>=LOSE_AT;
+  var last=S.turn>=TURNS;
+  if(flood&&!S.over&&!last)lines.push('Flood: cross out every die saved in your barn.');
+  if(storm&&!S.over&&!last){S.nextDice=3;lines.push('Storm: next turn you get only 3 dice.')}
+  if(!lines.length)lines.push(allStopped?'Nothing to check. Not a scratch!':'The Healer saved the day. Nothing to check.');
+  if(!S.over&&!last)lines.push('<span class="muted">Turn '+S.turn+' is done. Tick it off, and save a spare die in the barn if you like.</span>');
+
+  $('#res-title').textContent=allStopped?'Turn '+S.turn+': all trouble stopped!':'Turn '+S.turn+': the village is hit';
+  $('#res-card').className='card '+(allStopped?'goldbox':'alertbox');
+  $('#res-list').innerHTML=lines.map(function(l){return '<p>'+l+'</p>'}).join('');
+  drawMini('#mini-res',fresh);
+  $('#btn-next').textContent=S.over?'See what happened':last?'See how you did':'Start turn '+(S.turn+1);
+  show('v-result');
+  if(fell.length)GN.beep('rumble');else GN.beep(allStopped?'good':'bad');
+}
+$('#btn-next').addEventListener('click',function(){
+  GN.beep('tap');
+  if(S.over||S.turn>=TURNS){endGame()}else{startTurn()}
+});
+
+/* ---------- small picture of the village ---------- */
+function drawMini(sel,fresh){
+  fresh=fresh||{};
+  $(sel).innerHTML=PLACES.map(function(name,i){
+    var d=S.dmg[i],h='';
+    for(var b=0;b<BOXES;b++)h+='<i class="'+(b<d?(b>=d-(fresh[i]||0)?'x new':'x'):'')+'"></i>';
+    return '<div class="place'+(d>=BOXES?' gone':'')+'" aria-label="'+name+', '+d+' of '+BOXES+' boxes checked'+(d>=BOXES?', destroyed':'')+'"><span>'+(i+1)+' '+name+'</span><span class="boxes">'+h+'</span></div>';
+  }).join('');
+}
+
+/* ---------- end of the game ---------- */
+function titleFor(score){return score>=14?'Legends':score>=10?'Village heroes':score>=7?'Village standing':'A close call'}
+function endGame(){
+  stopTimer();
+  S.won=!S.over;
+  S.score=S.won?S.dmg.reduce(function(a,d){return a+(d<BOXES?BOXES-d:0)},0):0;
+  if(S.won){
+    $('#end-card').className='card goldbox';
+    $('#end-card').innerHTML='<p class="eyebrow">You saved the village</p><h1>'+titleFor(S.score)+'</h1><p class="big">'+S.score+'</p>'+
+      '<p>empty boxes on the places still standing. Write your score on your page.</p>'+
+      '<p class="muted small">4 to 6: A close call &middot; 7 to 9: Village standing &middot; 10 to 13: Village heroes &middot; 14 or more: Legends</p>';
+  }else{
+    $('#end-card').className='card alertbox';
+    $('#end-card').innerHTML='<p class="eyebrow">Game over</p><h1>The village has fallen</h1>'+
+      '<p>Three places were destroyed. You held on until <b>turn '+S.turn+' of '+TURNS+'</b>.</p><p class="muted">So close. Shuffle the roles and try again!</p>';
+  }
+  var sc=$('#sab-card');
+  sc.hidden=S.saboteur<0;
+  if(S.saboteur>=0){
+    sc.className='card';
+    var h='<p class="eyebrow">Secret saboteur</p><h2>Who was it?</h2><p>Talk it over and agree on one suspect.</p><div class="grid2">';
+    for(var i=0;i<S.players;i++)h+='<button class="small ghost" data-sus="'+i+'">Player '+(i+1)+'</button>';
+    sc.innerHTML=h+'</div>';
+  }
+  drawMini('#mini-end');
+  show('v-end');
+  GN.beep(S.won?'good':'rumble');
+}
+$('#sab-card').addEventListener('click',function(e){
+  var b=e.target.closest('[data-sus]');if(!b)return;
+  var guess=+b.dataset.sus,caught=guess===S.saboteur,who='Player '+(S.saboteur+1);
+  var sc=$('#sab-card');sc.className='card '+(caught?'goldbox':'alertbox');
+  sc.innerHTML='<p class="eyebrow">Secret saboteur</p><h2>It was '+who+'!</h2><p>'+
+    (caught?'You caught the saboteur. ':'You picked Player '+(guess+1)+'. The saboteur fooled you. ')+
+    (S.won?'The village stands, so the saboteur loses.':'The village fell, so the saboteur wins.')+'</p>';
+  GN.beep(caught?'good':'bad');
+});
+$('#btn-card').addEventListener('click',function(){
+  var names=$('#names').value.split(',').map(function(s){return s.trim()}).filter(Boolean).slice(0,4);
+  if(!names.length)for(var i=0;i<S.players;i++)names.push('Player '+(i+1));
+  GN.card(S.won
+    ?{game:'Save the Village',headline:titleFor(S.score),rows:names.map(function(n){return {name:n,score:S.score}}),unit:'boxes saved, as one team',note:'We kept the village standing for 10 turns.'}
+    :{game:'Save the Village',headline:'The village has fallen',rows:names.map(function(n){return {name:n,score:S.turn}}),unit:'turn reached, as one team',note:'We will be back to save it.'});
+});
+
+/* ---------- new game ---------- */
+GN.confirmBtn($('#btn-new'),'Tap again to start over',function(){
+  stopTimer();S=null;$('#btn-new').hidden=true;$('#names').value='';drawSetup();show('v-setup');
+});
+
+drawSetup();
+GN.howto('Save the Village',HOWTO);
+})();
+</script></body></html>
